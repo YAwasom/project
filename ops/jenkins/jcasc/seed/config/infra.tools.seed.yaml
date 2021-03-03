@@ -1,0 +1,155 @@
+- isMultiBranch: false
+  projectName: infra-tools-cloud-custodian
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra tools cloud custodian
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Infra
+  viewRegex: ((.*)infra-tools(.*))
+  scriptPath: security/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: "H H * * *"
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: infra-tools-fmt-lint
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra tools fmt lint
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Infra
+  viewRegex: ((.*)infra-tools(.*))
+  scriptPath: Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: infra-tools-aws-sec-report
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra tools sec report
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Infra
+  viewRegex: ((.*)infra-tools(.*))
+  scriptPath: ops/AWSSecReport/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: infra-tools-aws-parameter-store
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra tools parameter store script
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Infra
+  viewRegex: ((.*)infra-tools(.*))
+  scriptPath: security/parameter-store/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: infra-tools-cfn-guard
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra tools cloudformation guard
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Infra
+  viewRegex: ((.*)infra-tools(.*))
+  scriptPath: security/cf-guard/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: infra-tools-cf-lint
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra tools cloudformation lint
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Infra
+  viewRegex: ((.*)infra-tools(.*))
+  scriptPath: security/cf-lint/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: infra-tools-security-handler-nonprod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra tools security handler lambda
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Infra
+  viewRegex: ((.*)infra-tools(.*))
+  scriptPath: security/automation/security-findings-handler/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: infra-tools-security-handler-prod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra tools security handler lambda
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Infra
+  viewRegex: ((.*)infra-tools(.*))
+  scriptPath: security/automation/security-findings-handler/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: infra-tools-security-iam-cleanup-nonprod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra tools iam cleanup lambda
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Infra
+  viewRegex: ((.*)infra-tools(.*))
+  scriptPath: security/automation/iam-cleanup/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: infra-tools-security-iam-cleanup-prod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra tools iam cleanup lambda
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Infra
+  viewRegex: ((.*)infra-tools(.*))
+  scriptPath: security/automation/iam-cleanup/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: infra-tools-repository-backup
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra tools repository backup
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Infra
+  viewRegex: ((.*)infra-tools(.*))
+  scriptPath: security/jobs/github-backup/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: "H H * * *"
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: infra-tools-build-dockerhub-images
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra tools dockerhub builds
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Infra
+  viewRegex: ((.*)infra-tools(.*))
+  scriptPath: security/jobs/build-dockerhub/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: "H H * * *"
+  lightweight: true

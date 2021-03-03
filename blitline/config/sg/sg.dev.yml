@@ -1,0 +1,5 @@
+  ProjectName: blitline
+  Environment: dev
+  WbCidr: 168.161.192.0/21
+  VpcStack: contentnow-vpc-dev
+  WebSecurityGroupId: sg-01030247e5ec593f3

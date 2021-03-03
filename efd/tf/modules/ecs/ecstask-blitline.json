@@ -1,0 +1,57 @@
+[
+    {
+      "name": "efd-blitline",
+      "image": "348180535083.dkr.ecr.us-west-2.amazonaws.com/cn/efd-blitline:${efdenv}",
+      "cpu": 1024,
+      "memory": 1024,
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp",
+          "hostPort": 0
+        }
+      ],
+      "environment": [
+        {
+          "name": "efd_role",
+          "value": "arn:aws:iam::${accountid}:role/wb-cmd-efd-ecs-${efdenv}-${region}-EfdECSRole"
+        },
+        {
+          "name": "efd_env",
+          "value": "${efdenv}"
+        },
+        {
+          "name": "APPLICATION_NAME",
+          "value": "efd-blitline-${efdenv}"
+        },
+        {
+          "name": "region",
+          "value": "${region}"
+        },
+        {
+          "name": "APPLICATION_TYPE",
+          "value": "api"
+        }
+      ],
+      "secrets":[
+        {
+          "name": "CLOUDWATCH",
+          "valueFrom": "/${efdenv}/ops.cloudwatch"
+        },
+        {
+          "name": "blitline.jdbc.username",
+          "valueFrom": "/${efdenv}/blitline.jdbc.username"
+        },
+        {
+          "name": "blitline.jdbc.password",
+          "valueFrom": "/${efdenv}/blitline.jdbc.password"
+        },
+        {
+          "name": "blitline.jdbc.url",
+          "valueFrom": "/${efdenv}/blitline.jdbc.url"
+        }
+      ]
+  
+    }
+  ]

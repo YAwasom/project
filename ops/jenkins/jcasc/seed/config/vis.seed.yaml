@@ -1,0 +1,859 @@
+---
+- isMultiBranch: true
+  projectName: wbts-vis-reference
+  url: git@github.com:wm-msc-malt/wbts-vis-reference.git
+  description: vis reference project
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scmScanInterval: 5m
+  includes: master
+
+- isMultiBranch: true
+  projectName: wbts-vis-common-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-common.git
+  description: commonly used modules for VIS
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-common-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-common.git
+  description: commonly used modules for VIS
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-schema-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-schema.git
+  description: generate schemas for VIS
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-schema-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-schema.git
+  description: VIS schemas release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-reference-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-reference.git
+  description: NodeJs project archetype and test project for CI changes
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: dev
+
+- isMultiBranch: true
+  projectName: wbts-vis-reference-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-reference.git
+  description: NodeJs project archetype and test project for release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: dev
+
+- isMultiBranch: true
+  projectName: wbts-vis-reference-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-reference.git
+  description: NodeJs project archetype and test project for deploy
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-deploy
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: master dev
+
+- isMultiBranch: true
+  projectName: wbts-vis-wb-inbound-service-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-wb-inbound-service.git
+  description: NodeJs project for wb inbound service snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: Development
+
+- isMultiBranch: true
+  projectName: wbts-vis-wb-inbound-service-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-wb-inbound-service.git
+  description: NodeJs project for wb inbound service release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: Development
+
+- isMultiBranch: true
+  projectName: wbts-vis-wb-inbound-service-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-wb-inbound-service.git
+  description: NodeJs project for wb inbound service for deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-deploy
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: master Development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-library-cf-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-library-cf snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-library-cf/Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-library-cf-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-library-cf release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-library-cf/Jenkinsfile-rc
+  scmScanInterval: ""
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-library-cf-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-library-cf deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-library-cf/Jenkinsfile-deploy
+  scmScanInterval: ""
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-invoice-ib-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-invoice-ib snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-invoice-ib/Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-invoice-ib-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-invoice-ib release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-invoice-ib/Jenkinsfile-rc
+  scmScanInterval: ""
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-invoice-ib-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-invoice-ib deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-invoice-ib/Jenkinsfile-deploy
+  scmScanInterval: ""
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-invoice-cf-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-invoice-cf snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-invoice-cf/Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-invoice-cf-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-invoice-cf release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-invoice-cf/Jenkinsfile-rc
+  scmScanInterval: ""
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-invoice-cf-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-invoice-cf deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-invoice-cf/Jenkinsfile-deploy
+  scmScanInterval: ""
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-order-cf-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-order-cf snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-order-cf/Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-order-cf-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-order-cf release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-order-cf/Jenkinsfile-rc
+  scmScanInterval: ""
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-order-cf-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-order-cf deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-order-cf/Jenkinsfile-deploy
+  scmScanInterval: ""
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-library-ib-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-library-ib snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-library-ib/Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-library-ib-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-library-ib release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-library-ib/Jenkinsfile-rc
+  scmScanInterval: ""
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-library-ib-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-library-ib deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-library-ib/Jenkinsfile-deploy
+  scmScanInterval: ""
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-library-ob-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-library-ob snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-library-ob/Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-library-ob-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-library-ob release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-library-ob/Jenkinsfile-rc
+  scmScanInterval: ""
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-library-ob-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-library-ob deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-library-ob/Jenkinsfile-deploy
+  scmScanInterval: ""
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-order-ob-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-order-ob snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-order-ob/Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-order-ob-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-order-ob release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-order-ob/Jenkinsfile-rc
+  scmScanInterval: ""
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-order-ob-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-order-ob deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-order-ob/Jenkinsfile-deploy
+  scmScanInterval: ""
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-order-ib-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-order-ib snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-order-ib/Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-order-ib-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-order-ib release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-order-ib/Jenkinsfile-rc
+  scmScanInterval: ""
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-order-ib-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation.git
+  description: NodeJs project for wbts-vis-transformation-order-ib deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-transformation-order-ib/Jenkinsfile-deploy
+  scmScanInterval: ""
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-web-service-clients-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-web-service-clients.git
+  description: VIS web-service-clients snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-web-service-clients-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-web-service-clients.git
+  description: VIS web-service-clients release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-outbound-dispatcher-service-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-outbound-dispatcher-service.git
+  description: NodeJs project for outbound dispatcher service snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: Development
+
+- isMultiBranch: true
+  projectName: wbts-vis-outbound-dispatcher-service-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-outbound-dispatcher-service.git
+  description: NodeJs project for outbound dispatcher service release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: Development
+
+- isMultiBranch: true
+  projectName: wbts-vis-outbound-dispatcher-service-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-outbound-dispatcher-service.git
+  description: NodeJs project for outbound dispatcher service deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-deploy
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: master Development
+
+- isMultiBranch: true
+  projectName: wbts-vis-test-automation
+  url: git@github.com:wm-msc-malt/wbts-vis-test-automation.git
+  description: Maven Project for VIS test automation
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile
+  scmScanInterval: ""
+  includes: master development stage stage-ui
+
+- isMultiBranch: true
+  projectName: wbts-vis-library-inbound-api-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-api.git
+  description: NodeJs project for wbts-vis-library-inbound-api snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-library-inbound-api/Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-library-inbound-api-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-api.git
+  description: NodeJs project for wbts-vis-library-inbound-api release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-library-inbound-api/Jenkinsfile-rc
+  scmScanInterval: ""
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-library-inbound-api-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-api.git
+  description: NodeJs project for wbts-vis-library-inbound-api deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-library-inbound-api/Jenkinsfile-deploy
+  scmScanInterval: ""
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-outbound-api-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-api.git
+  description: NodeJs project for wbts-vis-outbound-api snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-outbound-api/Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-outbound-api-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-api.git
+  description: NodeJs project for wbts-vis-outbound-api release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-outbound-api/Jenkinsfile-rc
+  scmScanInterval: ""
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-outbound-api-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-api.git
+  description: NodeJs project for wbts-vis-outbound-api deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-outbound-api/Jenkinsfile-deploy
+  scmScanInterval: ""
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-invoice-inbound-api-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-api.git
+  description: NodeJs project for wbts-vis-invoice-inbound-api snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-invoice-inbound-api/Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-invoice-inbound-api-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-api.git
+  description: NodeJs project for wbts-vis-invoice-inbound-api release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-invoice-inbound-api/Jenkinsfile-rc
+  scmScanInterval: ""
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-invoice-inbound-api-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-api.git
+  description: NodeJs project for wbts-vis-invoice-inbound-api deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-invoice-inbound-api/Jenkinsfile-deploy
+  scmScanInterval: ""
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-order-inbound-api-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-api.git
+  description: NodeJs project for wbts-vis-order-inbound-api snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-order-inbound-api/Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-order-inbound-api-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-api.git
+  description: NodeJs project for wbts-vis-order-inbound-api release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-order-inbound-api/Jenkinsfile-rc
+  scmScanInterval: ""
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-order-inbound-api-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-api.git
+  description: NodeJs project for wbts-vis-order-inbound-api deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: wbts-vis-order-inbound-api/Jenkinsfile-deploy
+  scmScanInterval: ""
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-wb-order-inbound-service-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-wb-order-inbound-service.git
+  description: NodeJs project for order inbound service snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-wb-order-inbound-service-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-wb-order-inbound-service.git
+  description: NodeJs project for order inbound service release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-wb-order-inbound-service-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-wb-order-inbound-service.git
+  description: NodeJs project for order inbound service deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-deploy
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-persistence-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-persistence.git
+  description: NodeJs project for wbts-vis-persistence snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-persistence-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-persistence.git
+  description: NodeJs project for wbts-vis-persistence release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-persistence-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-persistence.git
+  description: NodeJs project for wbts-vis-persistence deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-deploy
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-test-automation-service-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-test-automation-service.git
+  description: NodeJs project for wbts-vis-test-automation-service snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-test-automation-service-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-test-automation-service.git
+  description: NodeJs project for wbts-vis-test-automation-service release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-test-automation-service-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-test-automation-service.git
+  description: NodeJs project for wbts-vis-test-automation-service deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-deploy
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-cosmos-mail-service-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-cosmos-mail-service.git
+  description: NodeJs project for wbts-vis-cosmos-mail-service snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-cosmos-mail-service-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-cosmos-mail-service.git
+  description: NodeJs project for wbts-vis-cosmos-mail-service release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-cosmos-mail-service-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-cosmos-mail-service.git
+  description: NodeJs project for wbts-vis-cosmos-mail-service deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-deploy
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: master development
+  
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-cosmos-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation-cosmos.git
+  description: NodeJs project for wbts-vis-transformation-cosmos snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-cosmos-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation-cosmos.git
+  description: NodeJs project for wbts-vis-transformation-cosmos release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-transformation-cosmos-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-transformation-cosmos.git
+  description: NodeJs project for wbts-vis-transformation-cosmos deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-deploy
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-cosmos-dispatch-service-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-cosmos-dispatch-service.git
+  description: NodeJs project for wbts-vis-cosmos-dispatch-service snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-cosmos-dispatch-service-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-cosmos-dispatch-service.git
+  description: NodeJs project for wbts-vis-cosmos-dispatch-service release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-cosmos-dispatch-service-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-cosmos-dispatch-service.git
+  description: NodeJs project for wbts-vis-cosmos-dispatch-service deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-deploy
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: master development
+
+- isMultiBranch: true
+  projectName: wbts-vis-cosmos-notifications-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-cosmos-notifications.git
+  description: commonly used modules for cosmos
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-cosmos-notifications-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-cosmos-notifications.git
+  description: commonly used modules for cosmos
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-cosmos-ses-service-snapshot
+  url: git@github.com:wm-msc-malt/wbts-vis-cosmos-ses-service.git
+  description: NodeJs project for wbts-vis-cosmos-ses-service snapshot
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-snapshot
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-cosmos-ses-service-rc
+  url: git@github.com:wm-msc-malt/wbts-vis-cosmos-ses-service.git
+  description: NodeJs project for wbts-vis-cosmos-ses-service release candidate job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-rc
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: development
+
+- isMultiBranch: true
+  projectName: wbts-vis-cosmos-ses-service-deploy
+  url: git@github.com:wm-msc-malt/wbts-vis-cosmos-ses-service.git
+  description: NodeJs project for wbts-vis-cosmos-ses-service deploy job
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Vis
+  viewRegex: ((.*)vis-(.*))
+  scriptPath: Jenkinsfile-deploy
+  scmScanInterval: ""
+  wipeWorkspace: true
+  includes: master development

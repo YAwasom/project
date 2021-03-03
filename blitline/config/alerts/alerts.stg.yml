@@ -1,0 +1,4 @@
+ProjectName: blitline
+Environment: stg
+Ec2Stack: blitline-stg-worker-servers
+PeripheralsStack: blitline-stg-peripherals

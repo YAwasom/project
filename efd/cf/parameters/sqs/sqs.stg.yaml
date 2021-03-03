@@ -1,0 +1,9 @@
+Environment: stg
+DelaySeconds: 0
+MaximumMessageSize: 262144
+MessageRetentionPeriod: 345600
+ReceiveMessageWaitTimeSeconds: 10
+UseDeadLetterQueue: true
+VisibilityTimeout: 300
+KmsKeyReusePeriodSeconds: 300
+QueueNameSuffix: "audit"

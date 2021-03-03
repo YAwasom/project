@@ -1,0 +1,441 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: efd ec2
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+
+  AppKey:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  WebKey:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  DbKey:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  FluxServerImageID:
+    Type: AWS::EC2::Image::Id
+    Description: Choose web server AMI
+    Default: ami-0d0b4b0862bde4749
+
+  AppServerImageID:
+    Type: AWS::EC2::Image::Id
+    Description: Choose web server AMI
+    Default: ami-06b1aeb2fc30e17f1
+  
+  SurlyServerImageID:
+    Type: AWS::EC2::Image::Id
+    Description: Choose web server AMI
+    Default: ami-0cc564d79befaf292
+
+  DbServerImageID:
+    Type: AWS::EC2::Image::Id
+    Description: Choose web server AMI
+    Default: ami-009c9c1766e246f41
+
+  FluxServerInstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: m4.xlarge
+
+  AppServerInstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: m4.xlarge
+  
+  DbServerInstanceType:
+    Description: WebServer EC2 instance type
+    Type: String
+    Default: m4.xlarge
+
+Resources:
+  AppAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-1-2A"
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-2-2B"
+      LaunchConfigurationName: !Ref AppLaunchConfig
+      MinSize: "4"
+      MaxSize: "4"
+      TargetGroupARNs:
+        - Fn::ImportValue: !Sub "efd-${Environment}-nlb1-mars-tg-arn"
+      NotificationConfigurations:
+        - TopicARN:
+            Fn::ImportValue: !Sub "efd-${Environment}-sns-notification"
+          NotificationTypes:
+            - "autoscaling:EC2_INSTANCE_LAUNCH"
+            - "autoscaling:EC2_INSTANCE_LAUNCH_ERROR"
+            - "autoscaling:EC2_INSTANCE_TERMINATE"
+            - "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+      Tags:
+        - Key: Name
+          PropagateAtLaunch: true
+          Value: AppServer-autoscale
+  AppLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      Comment: Install tomcat and start service
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              httpd: []
+              tomcat: []
+          service:
+            sysvinit:
+              tomcat:
+                enabled: true
+                ensureRunning: true
+    Properties:
+      KeyName: !Ref AppKey
+      InstanceType: "m4.xlarge"
+      IamInstanceProfile:
+        Fn::ImportValue: !Sub "efd-${Environment}-role-us-west-2-instance-profile"
+      SecurityGroups:
+        - Fn::ImportValue: !Sub "efd-${Environment}-sg1-app"
+      ImageId: !Ref AppServerImageID
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # Logs can be found at /var/log/user-data.log
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+          yum update -y --exclude=tomcat*
+          # Install bootstrap, logs, and ssm agent
+          rm -rf /root/.aws
+          yum -y install aws-cfn-bootstrap
+          #yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+          systemctl restart amazon-ssm-agent                                     
+          #rpm -Uvh https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+          # Install the Inspector agent
+          curl https://d1wk0tztpsntt1.cloudfront.net/linux/latest/install -o inspector_install.sh
+          bash ./inspector_install.sh
+          rm ./inspector_install.sh 
+          # Syncing code from S3
+          yum install aws-cli -y
+          cd /usr/share/tomcat/webapps/
+          rm -rf mars-efd-ws.war
+          rm -rf mars-efd-blitline-ws-0.0.1.war
+          rm -rf mars-efd-ws
+          rm -rf mars-efd-blitline-ws-0.0.1
+          aws s3 cp s3://efd-prod-s3-code-repository/appwar/appserver/mars-efd-ws.war . 
+          aws s3 cp s3://efd-prod-s3-code-repository/appwar/appserver/mars-efd-blitline-ws-0.0.1.war .
+          chown tomcat:tomcat /usr/share/tomcat/webapps/*
+          rm -rf /usr/share/java/tomcat/properties/mars-efd-blitline-ws/blitline.properties
+          rm -rf /usr/share/java/tomcat/properties/mars-efd-blitline-ws/log4j.properties
+          rm -rf /usr/share/java/tomcat/properties/mars-config.properties 
+          aws s3 cp s3://efd-prod-s3-code-repository/appwar/appproperties/blitline.properties /usr/share/java/tomcat/properties/mars-efd-blitline-ws/
+          aws s3 cp s3://efd-prod-s3-code-repository/appwar/appproperties/log4j.properties /usr/share/java/tomcat/properties/mars-efd-blitline-ws/
+          aws s3 cp s3://efd-prod-s3-code-repository/appwar/appproperties/mars-config.properties /usr/share/java/tomcat/properties/
+          chown tomcat:tomcat /usr/share/java/tomcat/properties/mars-efd-blitline-ws/*
+          chown -R tomcat:tomcat /usr/share/java/tomcat/properties/*
+          # Install the files and packages from the metadata
+          sudo service tomcat restart
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource AppLaunchConfig --region ${AWS::Region}
+  SurlyAppAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-1-2A"
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-2-2B"
+      LaunchConfigurationName: !Ref SurlyAppLaunchConfig
+      MinSize: "2"
+      MaxSize: "2"
+      TargetGroupARNs:
+        - Fn::ImportValue: !Sub "efd-${Environment}-nlb1-surly-tg-arn"
+      NotificationConfigurations:
+        - TopicARN:
+            Fn::ImportValue: !Sub "efd-${Environment}-sns-surly-notification"
+          NotificationTypes:
+            - "autoscaling:EC2_INSTANCE_LAUNCH"
+            - "autoscaling:EC2_INSTANCE_LAUNCH_ERROR"
+            - "autoscaling:EC2_INSTANCE_TERMINATE"
+            - "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+      Tags:
+        - Key: Name
+          PropagateAtLaunch: true
+          Value: SurlyServer-autoscale
+  SurlyAppLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      Comment: Install tomcat and start service
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              httpd: []
+              tomcat: []
+          service:
+            sysvinit:
+              tomcat:
+                enabled: true
+                ensureRunning: true
+    Properties:
+      KeyName: !Ref AppKey
+      InstanceType: "m4.xlarge"
+      IamInstanceProfile:
+        Fn::ImportValue: !Sub "efd-${Environment}-role-us-west-2-instance-profile"
+      SecurityGroups:
+        - Fn::ImportValue: !Sub "efd-${Environment}-sg1-app"
+      ImageId: !Ref SurlyServerImageID
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # Logs can be found at /var/log/user-data.log
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+          yum update -y --exclude=tomcat*
+          # Install bootstrap, logs, and ssm agent
+          yum -y install aws-cfn-bootstrap
+          yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+          rpm -Uvh https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+
+          # Install the Inspector agent
+          curl https://d1wk0tztpsntt1.cloudfront.net/linux/latest/install -o inspector_install.sh
+          bash ./inspector_install.sh
+          rm ./inspector_install.sh 
+          # Syncing code from S3
+          yum install -y aws-cli
+          cd /usr/share/tomcat/webapps/
+          rm -rf static-url-ws
+          rm -rf static-url-ws.war
+          aws s3 sync s3://efd-prod-s3-code-repository/appwar/surlyserver/ .
+          chown tomcat:tomcat /usr/share/tomcat/webapps/*
+          # Install the files and packages from the metadata
+          sudo service tomcat restart
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource SurlyAppLaunchConfig --region ${AWS::Region}
+         
+  FluxAppAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-1-2A"
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-2-2B"
+      LaunchConfigurationName: !Ref FluxAppLaunchConfig
+      MinSize: "2"
+      MaxSize: "2"
+      TargetGroupARNs:
+        - Fn::ImportValue: !Sub "efd-${Environment}-nlb1-flux-tg-arn"
+      NotificationConfigurations:
+        - TopicARN:
+            Fn::ImportValue: !Sub "efd-${Environment}-sns-flux-notification"
+          NotificationTypes:
+            - "autoscaling:EC2_INSTANCE_LAUNCH"
+            - "autoscaling:EC2_INSTANCE_LAUNCH_ERROR"
+            - "autoscaling:EC2_INSTANCE_TERMINATE"
+            - "autoscaling:EC2_INSTANCE_TERMINATE_ERROR"
+      Tags:
+        - Key: Name
+          PropagateAtLaunch: true
+          Value: FluxServer-autoscale
+  FluxAppLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      Comment: Install tomcat and start service
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              httpd: []
+              tomcat: []
+          service:
+            sysvinit:
+              tomcat:
+                enabled: true
+                ensureRunning: true
+    Properties:
+      KeyName: !Ref AppKey
+      InstanceType: !Ref FluxServerInstanceType
+      IamInstanceProfile:
+        Fn::ImportValue: !Sub "efd-${Environment}-role-us-west-2-instance-profile"
+      SecurityGroups:
+        - Fn::ImportValue: !Sub "efd-${Environment}-sg1-flux"
+      ImageId: !Ref FluxServerImageID
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+                                                                                                                        
+                                          
+          # Logs can be found at /var/log/user-data.log
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+          # Install the Inspector agent
+          curl https://d1wk0tztpsntt1.cloudfront.net/linux/latest/install -o inspector_install.sh
+          bash ./inspector_install.sh
+          rm ./inspector_install.sh 
+
+          # Install bootstrap, logs, and ssm agent
+          yum update -y
+          yum -y install aws-cfn-bootstrap
+          #yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+          #rpm -Uvh https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+
+          # Install the files and packages from the metadata
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource FluxAppLaunchConfig --region ${AWS::Region}
+  DbServer1:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: !Ref DbServerInstanceType
+      IamInstanceProfile:
+        Fn::ImportValue: !Sub "efd-${Environment}-role-us-west-2-instance-profile"
+      ImageId: !Ref DbServerImageID
+      KeyName: !Ref DbKey
+      SubnetId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-1-2A"
+      AvailabilityZone: us-west-2a
+      SecurityGroupIds:
+        - Fn::ImportValue: !Sub "efd-${Environment}-sg1-db"
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            Encrypted: true
+            KmsKeyId: 
+             Fn::ImportValue: !Sub "efd-${Environment}-kms-rds-db-alias"
+            VolumeSize: 30
+            VolumeType: gp2
+        - DeviceName: /dev/sdb
+          Ebs:
+            Encrypted: true
+            KmsKeyId: 
+             Fn::ImportValue: !Sub "efd-${Environment}-kms-rds-db-alias"
+            VolumeSize: 30
+            VolumeType: gp2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # Logs can be found at /var/log/user-data.log
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+          # Install the Inspector agent
+          curl https://d1wk0tztpsntt1.cloudfront.net/linux/latest/install -o inspector_install.sh
+          bash ./inspector_install.sh
+          rm ./inspector_install.sh 
+
+          # Install bootstrap, logs, and ssm agent
+          yum update -y
+          yum -y install aws-cfn-bootstrap
+          yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+          rpm -Uvh https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+
+          # Install the files and packages from the metadata
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource FluxAppLaunchConfig --region ${AWS::Region}      
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-db-1"
+
+  DbServer2:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: !Ref DbServerInstanceType
+      IamInstanceProfile:
+        Fn::ImportValue: !Sub "efd-${Environment}-role-us-west-2-instance-profile"
+      ImageId: !Ref DbServerImageID
+      KeyName: !Ref DbKey
+      SubnetId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-2-2B"
+      AvailabilityZone: us-west-2b
+      SecurityGroupIds:
+        - Fn::ImportValue: !Sub "efd-${Environment}-sg1-db"
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            Encrypted: true
+            KmsKeyId: 
+             Fn::ImportValue: !Sub "efd-${Environment}-kms-rds-db-alias"
+            VolumeSize: 30
+            VolumeType: gp2
+        - DeviceName: /dev/sdb
+          Ebs:
+            Encrypted: true
+            KmsKeyId: 
+             Fn::ImportValue: !Sub "efd-${Environment}-kms-rds-db-alias"
+            VolumeSize: 30
+            VolumeType: gp2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # Logs can be found at /var/log/user-data.log
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+          # Install the Inspector agent
+          curl https://d1wk0tztpsntt1.cloudfront.net/linux/latest/install -o inspector_install.sh
+          bash ./inspector_install.sh
+          rm ./inspector_install.sh 
+
+          # Install bootstrap, logs, and ssm agent
+          yum update -y
+          yum -y install aws-cfn-bootstrap
+          yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+          rpm -Uvh https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+
+          # Install the files and packages from the metadata
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource FluxAppLaunchConfig --region ${AWS::Region}    
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-db-2"
+
+  DbServer3:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      InstanceType: !Ref DbServerInstanceType
+      IamInstanceProfile:
+        Fn::ImportValue: !Sub "efd-${Environment}-role-us-west-2-instance-profile"
+      ImageId: !Ref DbServerImageID
+      KeyName: !Ref DbKey
+      SubnetId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-3-2C"
+      AvailabilityZone: us-west-2c
+      SecurityGroupIds:
+        - Fn::ImportValue: !Sub "efd-${Environment}-sg1-db"
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            Encrypted: true
+            KmsKeyId: 
+             Fn::ImportValue: !Sub "efd-${Environment}-kms-rds-db-alias"
+            VolumeSize: 30
+            VolumeType: gp2
+        - DeviceName: /dev/sdb
+          Ebs:
+            Encrypted: true
+            KmsKeyId: 
+             Fn::ImportValue: !Sub "efd-${Environment}-kms-rds-db-alias"
+            VolumeSize: 30
+            VolumeType: gp2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # Logs can be found at /var/log/user-data.log
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+          # Install the Inspector agent
+          curl https://d1wk0tztpsntt1.cloudfront.net/linux/latest/install -o inspector_install.sh
+          bash ./inspector_install.sh
+          rm ./inspector_install.sh 
+
+          # Install bootstrap, logs, and ssm agent
+          yum update -y
+          yum -y install aws-cfn-bootstrap
+          yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+          rpm -Uvh https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+
+          # Install the files and packages from the metadata
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource FluxAppLaunchConfig --region ${AWS::Region}
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-db-3"

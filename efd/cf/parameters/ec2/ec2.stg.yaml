@@ -1,0 +1,11 @@
+Environment: stg
+AppKey: stg-wb-efd-app
+WebKey: stg-wb-efd-app
+DbKey: stg-wb-edf-db
+FluxServerImageID: ami-0eb6cffb62be458b8
+AppServerImageID: ami-03eaf978144f0d44e
+SurlyServerImageID: ami-0d79baaa2294eeb2e
+DbServerImageID: ami-039a07cfa0a090fb6
+FluxServerInstanceType: m4.xlarge
+AppServerInstanceType: m4.xlarge
+DbServerInstanceType: m4.xlarge

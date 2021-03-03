@@ -1,0 +1,23 @@
+security:
+  apiToken:
+    creationOfLegacyTokenEnabled: false
+    tokenGenerationOnCreationEnabled: false
+    usageStatisticsEnabled: true
+  globalJobDslSecurityConfiguration:
+    useScriptSecurity: true
+  queueItemAuthenticator:
+    authenticators:
+      - global:
+          strategy: "systemAuthorizationStrategy"
+  scriptApproval:
+    approvedSignatures:
+      - staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.Object java.lang.String
+      - method groovy.lang.GroovyObject invokeMethod java.lang.String java.lang.Object
+      - method java.lang.String format java.lang.String java.lang.Object[]
+      - method org.kohsuke.github.GHPerson listRepositories int
+      - method org.kohsuke.github.GHRepository getSshUrl
+      - method org.kohsuke.github.GitHub getOrganization java.lang.String
+      - method org.kohsuke.github.PagedIterable asList
+      - staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt java.lang.Object java.lang.String
+      - staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods putAt java.lang.Object java.lang.String java.lang.Object
+      - staticMethod org.kohsuke.github.GitHub connectUsingPassword

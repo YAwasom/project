@@ -1,0 +1,8 @@
+Environment: stg
+RdsInstanceClass: db.m5.large
+MySQLDbName: MyDatabase
+MySQLMasterUserName: marsservice
+MySQLPassword: MyPassword
+DbSnapshot: arn:aws:rds:us-west-2:249411880833:snapshot:marsefdrds-stage-testing-migration
+DBAllocated: 50
+MaxDBAllocated: 100

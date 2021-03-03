@@ -1,0 +1,347 @@
+---
+- isMultiBranch: true
+  projectName: nuxeo-ft
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  description: nuxeo functional tests
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scmScanInterval: 5m
+  includes: develop master
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-compose
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests docker compose
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/MasterJenkinsfile
+  scmTrigger: ""
+  cronTrigger: "H 19,23 * * *"
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-compose-rc
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests docker compose rc
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/rc/MasterJenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-dc-comics
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests for dc comics
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-new-line-archive
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests for new line archive
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-stock-footage-television
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests for new line archive
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-stock-footage-theatrical
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests for stock footage theatrical
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-archive-services
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests for archive services
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-consumer-products
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests for archive services
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-localization
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests for localization
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-home-entertainment
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests for home entertainment
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-theatrical
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests for theatrical
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-television
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests for television
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-wbie
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests for wbie
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-dc-comics-rc
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests dc comics release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-new-line-archive-rc
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests new line release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-stock-footage-television-rc
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests stock footage tv release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-stock-footage-theatrical-rc
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests stock footage theatrical release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-archive-services-rc
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests archive services release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-consumer-products-rc
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests consumer products release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-localization-rc
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests localization release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-home-entertainment-rc
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests home entertainment release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-theatrical-rc
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests theatrical release candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-television-rc
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests television candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false
+
+- isMultiBranch: false
+  projectName: nuxeo-ft-docker-wbie-rc
+  url: git@github.com:wm-msc-malt/nuxeo-functional-tests.git
+  branch: develop
+  description: nuxeo functional tests wbie candidate
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Test
+  viewRegex: ((.*)nuxeo-ft(.*))
+  scriptPath: jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  parallel: false

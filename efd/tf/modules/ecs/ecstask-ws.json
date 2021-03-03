@@ -1,0 +1,67 @@
+[
+  {
+    "name": "efd-ws",
+    "image": "348180535083.dkr.ecr.us-west-2.amazonaws.com/cn/efd-ws:${efdenv}",
+    "cpu": 1024,
+    "memory": 1024,
+    "essential": true,
+    "portMappings": [
+      {
+        "containerPort": 80,
+        "protocol": "tcp",
+        "hostPort": 0
+      }
+    ],
+    "environment": [
+      {
+        "name": "efd_role",
+        "value": "arn:aws:iam::${accountid}:role/wb-cmd-efd-ecs-${efdenv}-${region}-EfdECSRole"
+      },
+      {
+        "name": "efd_env",
+        "value": "${efdenv}"
+      },
+      {
+        "name": "APPLICATION_NAME",
+        "value": "efd-ws-${efdenv}"
+      },
+      {
+        "name": "region",
+        "value": "${region}"
+      },
+      {
+        "name": "APPLICATION_TYPE",
+        "value": "api"
+      }
+    ],
+    "Ulimit": [
+      {
+        "HardLimit": 100000,
+        "Name": "nofile",
+        "SoftLimit": 100000
+      }
+    ],
+    "secrets": [
+      {
+        "name": "CLOUDWATCH",
+        "valueFrom": "/${efdenv}/ops.cloudwatch"
+      },
+      {
+        "name": "surly.jdbc.username",
+        "valueFrom": "/${efdenv}/ws.jdbc.username"
+      },
+      {
+        "name": "surly.jdbc.password",
+        "valueFrom": "/${efdenv}/ws.jdbc.password"
+      },
+      {
+        "name": "surly.jdbc.url",
+        "valueFrom": "/${efdenv}/ws.jdbc.url"
+      },
+      {
+        "name": "surly.jdbc.collectionname",
+        "valueFrom": "/${efdenv}/ws.jdbc.collectionname"
+      }
+    ]
+  }
+]

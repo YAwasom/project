@@ -1,0 +1,10 @@
+---
+- isMultiBranch: true
+  projectName: publish-api
+  url: git@github.com:wm-msc-malt/publish-api.git
+  description: publish api
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Publish API
+  viewRegex: ((.*)publish-api(.*))
+  scmScanInterval: 5m
+  includes: dev stage master

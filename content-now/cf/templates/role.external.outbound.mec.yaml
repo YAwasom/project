@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "IAM role definition for external access to outbound/mec API"
+Parameters:
+
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+    Default: dev
+
+Conditions:
+  IsPreProd:
+    !Or [!Equals [!Ref Environment, "dev"], !Equals [!Ref Environment, "qa"]]
+
+Resources:
+  OutboundMecEndpointRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-${AWS::Region}"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !If [
+                    IsPreProd,
+                    "arn:aws:iam::880247372461:root",
+                    "arn:aws:iam::635365561645:root",
+                  ]
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: !Sub "${AWS::StackName}"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "execute-api:Invoke"
+                Resource: 
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/GET/outbound/mec"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-${AWS::Region}"
+
+Outputs:
+  OutboundMecEndpointRole:
+    Description: role for external access to outbound mec api
+    Value: !GetAtt OutboundMecEndpointRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-${AWS::Region}"

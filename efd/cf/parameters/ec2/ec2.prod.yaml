@@ -1,0 +1,11 @@
+Environment: prod
+AppKey: wb-mars-efd-app
+WebKey: wb-mars-efd-web
+DbKey: wb-mars-efd-db
+FluxServerImageID: ami-0b32fa9f092a605a1
+AppServerImageID: ami-07bf9cf65146e0c0e
+DbServerImageID: ami-0bc9e4c25d568782f
+SurlyServerImageID: ami-050096a6c6e8146cb
+FluxServerInstanceType: m4.xlarge
+AppServerInstanceType: m4.xlarge
+DbServerInstanceType: m4.xlarge

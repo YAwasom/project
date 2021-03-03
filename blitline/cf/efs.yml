@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Warner Media Content Now Blitline Elastic File Share
+
+Parameters:
+  ProjectName:
+    Description: 'Name of project'
+    Default: 'blitline'
+    Type: String
+
+  SubProject:
+    Description: 'Name of the subproject efs is being created for'
+    Default: 'blitline'
+    Type: String
+
+  Environment:
+    Description: 'A variable describing the environment. It will be appear in all resource names.'
+    Default: 'dev'
+    Type: String
+    AllowedValues: 
+      - dev
+      - qa
+      - stg
+      - prod
+  
+  VpcStack:
+    Description: 'Stack belonging to project VPC'
+    Type: String
+
+  SecurityGroupStack:
+    Description: 'Stack belonging to project Security Groups'
+    Type: String
+
+  EFSSecurityGroup:
+    Description: 'Security group EC2 containers are in'
+    Type: String
+
+Resources: 
+  ElasticFileStorage:
+    Type: AWS::EFS::FileSystem
+    Properties: 
+      Encrypted: True
+      FileSystemTags: 
+        - Key: Name
+          Value: !Sub "${AWS::StackName}"
+      KmsKeyId: 
+        Fn::ImportValue: !Sub "${ProjectName}-${Environment}-kms"
+
+  FileStorageMountTargetA:
+    Type: AWS::EFS::MountTarget
+    Properties: 
+      FileSystemId: !Ref ElasticFileStorage
+      SecurityGroups: 
+        - Fn::ImportValue: !Sub "${SecurityGroupStack}-${EFSSecurityGroup}"
+      SubnetId: 
+        Fn::ImportValue: !Sub "${VpcStack}-SubnetAPrivate"
+
+  FileStorageMountTargetB:
+    Type: AWS::EFS::MountTarget
+    Properties: 
+      FileSystemId: !Ref ElasticFileStorage
+      SecurityGroups: 
+        - Fn::ImportValue: !Sub "${SecurityGroupStack}-${EFSSecurityGroup}"
+      SubnetId: 
+        Fn::ImportValue: !Sub "${VpcStack}-SubnetBPrivate"
+    
+Outputs:
+  ElasticFileStorage:
+    Description: "EFS system id"
+    Value: !Ref ElasticFileStorage
+    Export:
+      Name: !Sub "${SubProject}-${Environment}-efs"
+  
+  MountTargetA:
+    Description: "EFS mount target id"
+    Value: !Ref FileStorageMountTargetA
+    Export:
+      Name: !Sub "${SubProject}-${Environment}-efs-mount-target-a"
+  
+  MountTargetB:
+    Description: "EFS mount target id"
+    Value: !Ref FileStorageMountTargetA
+    Export:
+      Name: !Sub "${SubProject}-${Environment}-efs-mount-target-b"

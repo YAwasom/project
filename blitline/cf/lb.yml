@@ -1,0 +1,326 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "Blitline Front Lb, and MicroServices Lb "
+
+Parameters:
+
+  ProjectName:
+    Type: String
+
+  AllQPort:
+    Type: String
+    Default: 7788
+
+  CedisPort:
+    Type: String
+    Default: 9765
+
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+    Default: dev
+
+  VpcStack:
+    Description: Stack name for the main VPC
+    Type: String
+
+  WbNetworkCidr:
+    Description: Warner Bros corp network cidr to whitelist
+    Type: String
+    Default: "168.161.192.0/21"
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  ActiveSecurityGroup:
+    Type: String
+
+  SecurityGroupStack:
+    Type: String
+
+  MicroservicesLbDnsPrefix:
+    Type: String
+
+  BlitlineHostedZone:
+    Type: String
+
+  InternalDns:
+    Type: String
+
+  WebPort:
+    Type: String
+    Default: 3000
+
+  WebDnsPrefix:
+    Type: String
+
+  AllowedAWSAccount:
+    Type: String
+    Description: "List of AWS Account that are allowed to access the endpoint"
+
+  LongpollingCachePort:
+    Type: String
+    Description: Long Polling Cache Service Port
+
+  SslPolicyDef:
+    Type: String
+    Default: "ELBSecurityPolicy-TLS-1-2-Ext-2018-06"
+    AllowedValues:
+      - "ELBSecurityPolicy-TLS-1-2-2017-01"
+      - "ELBSecurityPolicy-TLS-1-2-Ext-2018-06"
+      - "ELBSecurityPolicy-FS-2018-06"
+
+  HealthCheckIntervalSecs:
+    Type: String
+    Default: 30
+
+  AlbCertArnId:
+    Type: String
+
+Resources:
+
+  MicroservicesLb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${ProjectName}-${Environment}-ms-lb"
+      Scheme: internal
+      Type: network
+      Subnets:
+        - Fn::ImportValue: !Sub "${VpcStack}-SubnetAPrivate"
+        - Fn::ImportValue: !Sub "${VpcStack}-SubnetBPrivate"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${ProjectName}-${Environment}-ms-lb"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+
+  MicroservicesLbAllQTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: !Ref HealthCheckIntervalSecs
+      HealthCheckProtocol: TCP
+      HealthyThresholdCount: 3
+      HealthCheckPort: 'traffic-port'
+      Name: !Sub "${ProjectName}-${Environment}-allq-lb-tg"
+      Port: !Ref AllQPort
+      Protocol: TCP
+      UnhealthyThresholdCount: 3
+      VpcId:
+        Fn::ImportValue: !Sub "${VpcStack}-VPC"
+
+  MicroservicesLbCedisTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: !Ref HealthCheckIntervalSecs
+      HealthCheckProtocol: TCP
+      HealthyThresholdCount: 3
+      HealthCheckPort: 'traffic-port'
+      Name: !Sub "${ProjectName}-${Environment}-cedis-lb-tg"
+      Port: !Ref CedisPort
+      Protocol: TCP
+      UnhealthyThresholdCount: 3
+      VpcId:
+        Fn::ImportValue: !Sub "${VpcStack}-VPC"
+
+  MicroservicesLbAllQServiceListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref MicroservicesLbAllQTargetGroup
+      LoadBalancerArn: !Ref MicroservicesLb
+      Port: !Ref AllQPort
+      Protocol: TCP
+
+  MicroservicesLbCedisServiceListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref MicroservicesLbCedisTargetGroup
+      LoadBalancerArn: !Ref MicroservicesLb
+      Port: !Ref CedisPort
+      Protocol: TCP
+
+
+
+  MicroservicesLbDnsRecord:
+    DependsOn:
+      - MicroservicesLb
+      - MicroservicesLbAllQTargetGroup
+      - MicroservicesLbCedisTargetGroup
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId:  !Ref BlitlineHostedZone
+      Name:
+        'Fn::Join' : ['.', [!Ref MicroservicesLbDnsPrefix, !Ref InternalDns]]
+      Type: CNAME
+      TTL: '300'
+      ResourceRecords:
+      - !GetAtt MicroservicesLb.DNSName
+  #------------------------------------------------------------------------
+
+
+  WebLb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${ProjectName}-${Environment}-web-lb"
+      Scheme: internal
+      Type: network
+      Subnets:
+        - Fn::ImportValue: !Sub "${VpcStack}-SubnetAPrivate"
+        - Fn::ImportValue: !Sub "${VpcStack}-SubnetBPrivate"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${ProjectName}-${Environment}-web-lb"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  WebTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: !Ref HealthCheckIntervalSecs
+      HealthCheckProtocol: TCP
+      HealthyThresholdCount: 3
+      HealthCheckPort: 'traffic-port'
+      Name: !Sub "${ProjectName}-${Environment}-web-lb-tg"
+      Port: !Ref WebPort
+      Protocol: TCP
+      UnhealthyThresholdCount: 3
+      VpcId:
+        Fn::ImportValue: !Sub "${VpcStack}-VPC"
+
+  WebLbLongpollingCacheTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: !Ref HealthCheckIntervalSecs
+      HealthCheckProtocol: TCP
+      HealthyThresholdCount: 3
+      HealthCheckPort: 'traffic-port'
+      Name: !Sub "${ProjectName}-${Environment}-longpoll-lb-tg"
+      Port: !Ref LongpollingCachePort
+      Protocol: TCP
+      UnhealthyThresholdCount: 3
+      VpcId:
+        Fn::ImportValue: !Sub "${VpcStack}-VPC"
+
+  WebListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref WebTargetGroup
+      LoadBalancerArn: !Ref WebLb
+      Port: 80
+      Protocol: TCP
+
+  WebTlsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      SslPolicy: !Ref SslPolicyDef
+      DefaultActions:
+        - TargetGroupArn: !Ref WebTargetGroup
+          Type: forward
+      LoadBalancerArn: !Ref WebLb
+      Certificates:
+        - CertificateArn: !Sub "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/${AlbCertArnId}"
+      Port: 443
+      Protocol: TLS
+
+
+  WebLbLongpollingCacheListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref WebLbLongpollingCacheTargetGroup
+      LoadBalancerArn: !Ref WebLb
+      Port: !Ref LongpollingCachePort
+      Protocol: TCP
+
+  WebLbDnsRecord:
+    DependsOn:
+      - WebLb
+      - WebTargetGroup
+      - WebListener
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId:  !Ref BlitlineHostedZone
+      Name:
+        'Fn::Join' : ['.', [!Ref WebDnsPrefix, !Ref InternalDns]]
+      Type: CNAME
+      TTL: '300'
+      ResourceRecords:
+      - !GetAtt WebLb.DNSName
+
+
+  #Vpc Endpoint Service
+  BlitlineWebVpcEndpointService:
+    Type: AWS::EC2::VPCEndpointService
+    Properties:
+      AcceptanceRequired: false
+      NetworkLoadBalancerArns:
+      - !Ref WebLb
+
+  EndpointServicePermissions:
+    Type: "AWS::EC2::VPCEndpointServicePermissions"
+    Properties:
+      AllowedPrincipals: !Split [",", !Ref AllowedAWSAccount]
+      ServiceId: !Ref BlitlineWebVpcEndpointService
+
+Outputs:
+  MicroservicesLbDnsName:
+    Description: microservices lb dns name
+    Value: !GetAtt MicroservicesLb.DNSName
+    Export:
+      Name: !Sub "${AWS::StackName}-ms-lb-dns-name"
+
+  MicroservicesLbHostedZoneId:
+    Description: microservices lb hosted zone
+    Value: !GetAtt MicroservicesLb.CanonicalHostedZoneID
+    Export:
+      Name: !Sub "${AWS::StackName}-ms-lb-canonical-hosted-zone-id"
+
+  MicroservicesLbArn:
+    Description: microservices lb arn
+    Value: !Ref MicroservicesLb
+    Export:
+      Name: !Sub "${AWS::StackName}-ms-lb-arn"
+
+  MicroservicesAllQTargetGroup:
+    Description: microservices lb ecs target group
+    Value: !Ref MicroservicesLbAllQTargetGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-ms-allq-lb-tg"
+
+  MicroservicesCedisTargetGroup:
+    Description: microservices lb ecs target group
+    Value: !Ref MicroservicesLbCedisTargetGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-ms-cedis-lb-tg"
+
+  MicroservicesEndpoint:
+    Description: Microservices Endpoint
+    Value:
+      'Fn::Join' : ['.', [!Ref MicroservicesLbDnsPrefix, !Ref InternalDns]]
+    Export:
+      Name: !Sub "${AWS::StackName}-dns-endpoint"
+
+  WebTargetGroup:
+    Description: web ecs target group
+    Value: !Ref WebTargetGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-web-lb-tg"
+
+  LongpollCacheEndpoint:
+    Description: Long polling Cache Target Group
+    Value: !Ref WebLbLongpollingCacheTargetGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-longpoll-cache-lb-tg"
+
+  LbEndpoint:
+    Description: Web Load Balancer Endpoint
+    Value:
+      'Fn::Join' : ['.', [!Ref WebDnsPrefix, !Ref InternalDns]]
+    Export:
+      Name: !Sub "${AWS::StackName}-web-dns-endpoint"

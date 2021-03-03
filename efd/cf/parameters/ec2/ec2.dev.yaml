@@ -1,0 +1,11 @@
+Environment: dev
+AppKey: dev-wb-efd-app
+WebKey: dev-wb-efd-web
+DbKey: dev-wb-edf-db
+FluxServerImageID: ami-0d0b4b0862bde4749
+AppServerImageID: ami-06b1aeb2fc30e17f1
+SurlyServerImageID: ami-0cc564d79befaf292
+DbServerImageID: ami-009c9c1766e246f41
+FluxServerInstanceType: m4.xlarge
+AppServerInstanceType: t2.medium
+DbServerInstanceType: t2.medium

@@ -1,0 +1,156 @@
+---
+- isMultiBranch: false
+  projectName: live-search-batch-cf-dev
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: live search batch cloudformation dev
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scriptPath: livesearch/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: live-search-batch-cf-qa
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: live search batch cloudformation qa
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scriptPath: livesearch/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: live-search-batch-cf-prod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: live search batch cloudformation prod
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scriptPath: livesearch/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: live-search-logstash-ecs-cf-dev
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: live search logstash ecs cloudformation dev
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scriptPath: livesearch/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: live-search-logstash-ecs-cf-qa
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: live search logstash ecs cloudformation qa
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scriptPath: livesearch/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: live-search-logstash-ecs-cf-prod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: live search logstash ecs cloudformation prod
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scriptPath: livesearch/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: live-search-ui-ecs-cf-dev
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: live search ui ecs cloudformation dev
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scriptPath: livesearch/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: live-search-ui-ecs-cf-qa
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: live search ui ecs cloudformation qa
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scriptPath: livesearch/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: live-search-ui-ecs-cf-prod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: live search ui ecs cloudformation prod
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scriptPath: livesearch/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: live-search-api-lambda-cf-dev
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: live search api lambda cloudformation dev
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scriptPath: livesearch/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: live-search-api-lambda-cf-qa
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: live search api lambda cloudformation qa
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scriptPath: livesearch/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: live-search-api-lambda-cf-prod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: live search api lambda cloudformation prod
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scriptPath: livesearch/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true

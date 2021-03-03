@@ -1,0 +1,29 @@
+#! /bin/bash
+
+profile=$1
+region=${2:-us-west-2}
+
+PROFILES=($(cat ~/.aws/config | grep '\[profile' | sed -n 's/\[profile \(.*\).*\]/\1/p' | sort))
+
+if [ -z "$profile" ];  then
+    printf '%s\n' "${PROFILES[@]}"
+    exit 1
+fi
+
+if [[ ! " ${PROFILES[@]} " =~ " ${profile} " ]]; then
+    echo "No such profile in ~/.aws/profile => $profile"
+    exit 1
+fi
+
+blue=`tput setaf 4`
+yellow=`tput setaf 3`
+reset=`tput sgr0`
+
+AWS_DEFAULT_PROFILE=$profile \
+AWS_PROFILE=$profile \
+AWS_DEFAULT_REGION=$region \
+AWS_REGION=$region \
+AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text) \
+AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id) \
+AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key) \
+bash --rcfile <(echo "PS1='\w \[${yellow}\][\[${blue}\]\$AWS_DEFAULT_PROFILE-\$AWS_DEFAULT_REGION\[${yellow}\]]:\[${reset}\]\n🌨  '")

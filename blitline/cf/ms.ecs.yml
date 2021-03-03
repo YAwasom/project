@@ -1,0 +1,196 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "Blitline Web Ecs Cluster"
+
+Parameters:
+
+  ProjectName:
+    Description: Top level Project Name
+    Type: String
+
+  Environment:
+    Description: Environment Name
+    Type: String
+
+  ECSContainerDesiredCount:
+    Description: Number of ecs containers
+    Type: String
+
+  DockerTag:
+    Description: Blitline Microservices docker tag
+    Type: String
+    Default: latest
+
+  ServiceName:
+    Description: Name of the service
+    Type: String
+    Default: allq-server
+
+  EcrAccount:
+    Description: ECR Account Number
+    Type: String
+
+  RepoName:
+    Description: Repo Name
+    Type: String
+
+  Ec2Stack:
+    Description: Stack in which EC2 is deployed for the Ecs Service
+    Type: String
+
+  IamStack:
+    Description: Iam Role Stack
+    Type: String
+
+  EcrRegion:
+    Description: ECR Region (us-west-2)
+    Type: String
+
+  Serialize:
+    Description: Blitline-Specific Parameter
+    Type: String
+
+  AllQPort:
+    Description: Allq Port
+    Type: String
+    Default: 7788
+
+  CedisPort:
+    Type: String
+    Default: 9765
+
+  AuthCode:
+    Description: Blitline-Specific Parameter
+    Type: String
+
+  ACurvePublicKey:
+    Description: Blitline-Specific Parameter
+    Type: String
+
+  ServerPort:
+    Description: Blitline-Specific Parameter
+    Type: String
+
+  AlbStack:
+    Type: String
+
+  FileSystemDns:
+    Description: EFS Filesystem DNS for Microservices
+    Type: String
+
+Conditions:
+  IsDevEnv: !Or [!Equals [!Ref Environment, "dev"], !Equals [!Ref Environment, "qa"]]
+
+
+Resources:
+
+  EcsCloudwatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/ecs/${ProjectName}-${Environment}-${ServiceName}-logs"
+      RetentionInDays: 14
+
+  BlitlineMicroservicesTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      TaskRoleArn:
+        Fn::ImportValue: !Sub "${IamStack}-TaskRoleArn"
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub "${IamStack}-ExecutionRoleArn"
+      Family: !Sub "${AWS::StackName}"
+      Volumes: []
+      RequiresCompatibilities:
+        - EC2
+      NetworkMode: bridge
+      Volumes:
+        - Name: "allq-volume"
+          DockerVolumeConfiguration:
+            Autoprovision: True
+            Driver: local
+            Scope: shared
+            DriverOpts:
+              type: nfs
+              device: !Sub "${FileSystemDns}:/"
+              o: !Sub "addr=${FileSystemDns},nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
+      ContainerDefinitions:
+        - Name: !Sub '${ProjectName}-${Environment}-${ServiceName}'
+          Image: !Sub '${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/${ProjectName}-${RepoName}'
+          Memory: 512
+          MemoryReservation: 512
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref EcsCloudwatchLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub '${ProjectName}-${Environment}-${ServiceName}'
+          PortMappings:
+          - HostPort: !Ref AllQPort
+            Protocol: tcp
+            ContainerPort: !Ref AllQPort
+          MountPoints:
+            - ContainerPath: "/tmp/allq"
+              SourceVolume: "allq-volume"
+          Environment:
+            - Name: SERVER_PORT
+              Value: !Ref ServerPort
+            - Name: SERIALIZE
+              Value: !Ref Serialize
+            - Name: A_CURVE_PUBLICKEY
+              Value: !Ref ACurvePublicKey
+            - Name: ALLQ_DEBUG
+              Value: true
+          Secrets:
+            - Name: A_CURVE_SECRETKEY
+              ValueFrom: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/com/warnerbros/contentnow/blitline/${Environment}/MS_ACURVE_SECRET_KEY"
+        - Name: !Sub '${ProjectName}-${Environment}-cedis'
+          Image: !Sub '${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/${ProjectName}-cedis:latest'
+          Memory: 512
+          MemoryReservation: 512
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref EcsCloudwatchLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: !Sub '${ProjectName}-${Environment}-cedis'
+          PortMappings:
+            - HostPort: !Ref CedisPort
+              Protocol: tcp
+              ContainerPort: !Ref CedisPort
+          Command:
+            - "/src/server"
+          Environment:
+            - Name: AUTH_CODE
+              Value: !Ref AuthCode
+
+  BlitlineMicroservicesEcsService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub "${AWS::StackName}"
+      Cluster:
+        Fn::ImportValue : !Sub "${Ec2Stack}-EcsCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 100
+        MinimumHealthyPercent: 0
+      EnableECSManagedTags: false
+      LoadBalancers:
+        - ContainerName: !Sub '${ProjectName}-${Environment}-${ServiceName}'
+          ContainerPort: !Ref AllQPort
+          TargetGroupArn:
+            Fn::ImportValue: !Sub '${AlbStack}-ms-allq-lb-tg'
+        - ContainerName: !Sub '${ProjectName}-${Environment}-cedis'
+          ContainerPort: !Ref CedisPort
+          TargetGroupArn:
+            Fn::ImportValue: !Sub '${AlbStack}-ms-cedis-lb-tg'
+      #Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS"
+      PlacementStrategies: []
+      SchedulingStrategy: DAEMON
+      ServiceName: !Sub '${ProjectName}-${Environment}-ms-service'
+      ServiceRegistries: []
+      TaskDefinition: !Ref BlitlineMicroservicesTaskDefinition
+
+Outputs:
+  EcsServiceName:
+    Description: blitline web  service name
+    Value: !Ref BlitlineMicroservicesEcsService
+    Export:
+      Name: !Sub "${AWS::StackName}-service-name"

@@ -1,0 +1,41 @@
+pipeline {
+    agent {
+        label "dind-apline-05cpu-1gb"
+    }
+    stages{
+        stage('start') {
+            steps {
+                sendNotifications "STARTED"
+            }
+        }
+        stage('build image') {
+            steps {
+                dir('ops/jenkins/build-agents/alpine/nest/dind-jnlp-slave-base'){
+                    script {
+                        docker.withRegistry('https://348180535083.dkr.ecr.us-west-2.amazonaws.com', 'ecr:us-west-2:cmdt_jenkins_aws_credentials' ) {
+                            docker.build("cmd/jenkins-amz2-jnlp-slave-base:${env.GIT_COMMIT.take(7)}")
+                            docker.build("cmd/jenkins-amz2-jnlp-slave-base:latest")
+                        }
+                    }
+                }
+            }
+        }
+        stage('push image') {
+            steps {
+                dir('ops/jenkins/build-agents/alpine/nest/dind-jnlp-slave-base'){
+                    script {
+                        docker.withRegistry('https://348180535083.dkr.ecr.us-west-2.amazonaws.com', 'ecr:us-west-2:cmdt_jenkins_aws_credentials') {
+                            docker.image("cmd/jenkins-amz2-jnlp-slave-base:${env.GIT_COMMIT.take(7)}").push()
+                            docker.image("cmd/jenkins-amz2-jnlp-slave-base:latest").push()
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            sendNotifications currentBuild.currentResult
+        }
+    }
+}

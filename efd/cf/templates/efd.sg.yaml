@@ -1,0 +1,133 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: efd security groups
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+  VpcCidr:
+    Description: An environment name that will be appended to resource names
+    Type: String
+  WBVpn1:
+    Description: An environment name that will be appended to resource names
+    Type: String
+  WBVpn2:
+    Description: An environment name that will be appended to resource names
+    Type: String
+  WBVpn3:
+    Description: An environment name that will be appended to resource names
+    Type: String
+
+Resources:
+  FluxSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Web Server Security Group
+      VpcId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-id"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-web-sg"
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: '8080', ToPort: '8080', CidrIp:   !Ref VpcCidr }
+        - { IpProtocol: tcp, FromPort: '5901', ToPort: '5901', CidrIp :  !Ref VpcCidr }
+        - { IpProtocol: tcp, FromPort: '9000', ToPort: '9000', CidrIp :  !Ref VpcCidr }
+        - { IpProtocol: tcp, FromPort: '7186', ToPort: '7186', CidrIp :  !Ref VpcCidr }
+        - { IpProtocol: tcp, FromPort: '7520', ToPort: '7520', CidrIp :  !Ref VpcCidr }
+        - { IpProtocol: tcp, FromPort: '7156', ToPort: '7156', CidrIp :  !Ref VpcCidr }
+        - { IpProtocol: tcp, FromPort: '7186', ToPort: '7186', CidrIp :  !Ref WBVpn3 }
+        - { IpProtocol: tcp, FromPort: '7186', ToPort: '7186', CidrIp :  !Ref WBVpn2 }
+        - { IpProtocol: tcp, FromPort: '7186', ToPort: '7186', CidrIp :  !Ref WBVpn1 }
+        - { IpProtocol: tcp, FromPort: '2049', ToPort: '2049', CidrIp :  !Ref VpcCidr }
+
+  AppSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: App Server Security Group
+      VpcId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-id"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-app-sg"
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: '8080', ToPort: '8080', CidrIp:   !Ref VpcCidr }
+        - { IpProtocol: tcp, FromPort: '443', ToPort: '443', CidrIp:   !Ref VpcCidr }
+        - { IpProtocol: tcp, FromPort: '2049', ToPort: '2049', CidrIp :  !Ref VpcCidr }
+        - { IpProtocol: tcp, FromPort: '80', ToPort: '80', CidrIp :  !Ref VpcCidr }
+
+  DbSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: DB Server Security Group
+      VpcId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-id"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-db-sg"
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: '3306', ToPort: '3306', CidrIp :  !Ref VpcCidr }
+        - { IpProtocol: tcp, FromPort: '27017', ToPort: '27017', CidrIp :  !Ref VpcCidr }
+        - { IpProtocol: tcp, FromPort: '3306', ToPort: '3306', CidrIp :  !Ref WBVpn3 }
+        - { IpProtocol: tcp, FromPort: '3306', ToPort: '3306', CidrIp :  !Ref WBVpn2 }
+        - { IpProtocol: tcp, FromPort: '3306', ToPort: '3306', CidrIp :  !Ref WBVpn1 }
+        - { IpProtocol: tcp, FromPort: '27017', ToPort: '27017', CidrIp :  !Ref WBVpn3 }
+        - { IpProtocol: tcp, FromPort: '27017', ToPort: '27017', CidrIp :  !Ref WBVpn2 }
+        - { IpProtocol: tcp, FromPort: '27017', ToPort: '27017', CidrIp :  !Ref WBVpn1 }
+
+  AlbSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: DB Server Security Group
+      VpcId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-id"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-alb-sg"
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: '8080', ToPort: '8080', CidrIp:   !Ref VpcCidr }
+        - { IpProtocol: tcp, FromPort: '443', ToPort: '443', CidrIp :  !Ref VpcCidr}
+        - { IpProtocol: tcp, FromPort: '7186', ToPort: '7186', CidrIp :  !Ref VpcCidr }
+
+
+Outputs:
+  AppSecurityGroup:
+    Description: efd db security group
+    Value: !Ref AppSg
+    Export:
+      Name:
+        # efd-dev-sg-app
+        Fn::Sub: "${AWS::StackName}-app"
+
+  FluxSecurityGroup:
+    Description: efd db security group
+    Value: !Ref FluxSg
+    Export:
+      Name:
+        # efd-dev-sg-flux
+        Fn::Sub: "${AWS::StackName}-flux"
+
+  DbSecurityGroup:
+    Description: efd db security group
+    Value: !Ref DbSg
+    Export:
+      Name:
+        # efd-dev-sg-db
+        Fn::Sub: "${AWS::StackName}-db"
+
+  AlbSecurityGroup:
+    Description: efd alb security group
+    Value: !Ref AlbSg
+    Export:
+      Name:
+        # efd-dev-sg-alb
+        Fn::Sub: "${AWS::StackName}-alb"

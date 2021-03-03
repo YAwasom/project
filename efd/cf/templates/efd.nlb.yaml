@@ -1,0 +1,233 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: efd nlb
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+  AccessLogsBucketName:
+    Description: Name of the access logs bucket where alb access logs will be stored
+    Type: String
+
+Resources:
+  VpcLink:
+    Type: AWS::ApiGateway::VpcLink
+    Properties:
+      Name: !Sub "${AWS::StackName}-vpc-link"
+      TargetArns:
+        - !Ref MarsAppNlb
+
+  SurlyVpcLink:
+    Type: AWS::ApiGateway::VpcLink
+    Properties:
+      Name: !Sub "${AWS::StackName}-surly-vpc-link"
+      TargetArns:
+        - !Ref SurlyNlb
+
+  MarsAppNlb:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      Name: !Sub "${AWS::StackName}-app"
+      Subnets:
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-1-2A"
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-2-2B"
+      Type: "network"
+      Scheme: internal
+      LoadBalancerAttributes:
+      - Key: access_logs.s3.enabled
+        Value: 'true'
+      - Key: access_logs.s3.bucket
+        Value: !Ref AccessLogsBucketName
+
+  NlbListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref NlbTargetGroup
+      LoadBalancerArn: !Ref MarsAppNlb
+      Port: 80
+      Protocol: TCP
+
+  NlbListener2:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref NlbTargetGroup
+      LoadBalancerArn: !Ref MarsAppNlb
+      Port: 8080
+      Protocol: TCP
+
+  NlbTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      Name: !Sub "${AWS::StackName}-tg"
+      TargetType: instance
+      Protocol: TCP
+      Port: 8080
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 6
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      VpcId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-id"
+
+  SurlyNlb:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      Name: !Sub "${AWS::StackName}-surly-nlb"
+      Subnets:
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-1-2A"
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-2-2B"
+      Type: "network"
+      Scheme: internal
+      LoadBalancerAttributes:
+      - Key: access_logs.s3.enabled
+        Value: 'true'
+      - Key: access_logs.s3.bucket
+        Value: !Ref AccessLogsBucketName
+
+  NlbSurlyListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref SurlyNlbTargetGroup
+      LoadBalancerArn: !Ref SurlyNlb
+      Port: 80
+      Protocol: TCP
+
+  NlbSurlyListener2:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref SurlyNlbTargetGroup
+      LoadBalancerArn: !Ref SurlyNlb
+      Port: 8080
+      Protocol: TCP
+
+  SurlyNlbTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      Name: !Sub "${AWS::StackName}-surly-nlb-tg"
+      TargetType: instance
+      Protocol: TCP
+      Port: 8080
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 6
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      VpcId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-id"
+# 
+  FluxNlb:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      Name: !Sub "${AWS::StackName}-flux-nlb"
+      Subnets:
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-1-2A"
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-2-2B"
+      Type: "application"
+      Scheme: internal
+      LoadBalancerAttributes:
+      - Key: access_logs.s3.enabled
+        Value: 'true'
+      - Key: access_logs.s3.bucket
+        Value: !Ref AccessLogsBucketName
+
+  NlbFluxListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref FluxNlbTargetGroup
+      LoadBalancerArn: !Ref FluxNlb
+      Port: 7186
+      Protocol: HTTP
+
+
+  FluxNlbTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      Name: !Sub "${AWS::StackName}-flux-nlb-tg"
+      TargetType: instance
+      Protocol: HTTP
+      Port: 7186
+      VpcId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-id"
+
+Outputs:
+  VpcLink:
+    Description: efd app vpc link
+    Value: !Ref VpcLink
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-app-vpc-link"
+
+  SurlyVpcLink:
+    Description: efd surly vpc link
+    Value: !Ref SurlyVpcLink
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-surly-vpc-link"
+
+  SurlyNlb:
+    Description: efd dns name of surly nlb
+    Value: !GetAtt SurlyNlb.DNSName
+
+  SurlyNlbArn:
+    Description: efd surly nlb arn
+    Value: !Ref SurlyNlb
+    Export:
+      # efd-dev-nlb1-surly-app-arn
+      Name: !Sub "${AWS::StackName}-surly-app-arn"
+
+  SurlyNlbTargetGroupArn:
+    Description: efd surly nlb tg arn
+    Value: !Ref SurlyNlbTargetGroup
+    Export:
+      # efd-dev-nlb1-surly-tg-arn
+      Name: !Sub "${AWS::StackName}-surly-tg-arn"
+
+  MarsAppNlb:
+    Description: efd dns name of mars nlb
+    Value: !GetAtt MarsAppNlb.DNSName
+
+  MarsAppNlbArn:
+    Description: efd mars app nlb arn
+    Value: !Ref MarsAppNlb
+    Export:
+      # efd-dev-nlb1-mars-app-arn
+      Name: !Sub "${AWS::StackName}-mars-app-arn"
+
+  NlbTargetGroupArn:
+    Description: efd mars app nlb arn
+    Value: !Ref NlbTargetGroup
+    Export:
+      # efd-dev-nlb1-mars-tg-arn
+      Name: !Sub "${AWS::StackName}-mars-tg-arn"
+  FluxNlb:
+    Description: efd dns name of flux nlb
+    Value: !GetAtt FluxNlb.DNSName
+
+  fluxNlbArn:
+    Description: efd flux nlb arn
+    Value: !Ref FluxNlb
+    Export:
+      # efd-dev-nlb1-flux-app-arn
+      Name: !Sub "${AWS::StackName}-flux-app-arn"
+
+  FluxNlbTargetGroupArn:
+    Description: efd flux nlb tg arn
+    Value: !Ref FluxNlbTargetGroup
+    Export:
+      # efd-dev-nlb1-flux-tg-arn
+      Name: !Sub "${AWS::StackName}-flux-tg-arn"

@@ -1,0 +1,39 @@
+---
+- isMultiBranch: false
+  projectName: gold-amz2-ec2-ami
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: gold amz2 ec2 ami builder
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Golden AMIs
+  viewRegex: ((.*)gold-(.*))
+  scriptPath: ops/gold-ami/Jenkinsfile-EC2
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: gold-amz2-ecs-ami
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: gold amz2 ecs ami builder
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Golden AMIs
+  viewRegex: ((.*)gold-(.*))
+  scriptPath: ops/gold-ami/Jenkinsfile-ECS
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+  
+- isMultiBranch: false
+  projectName: gold-ubnt-ami
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: gold ubuntu ami builder
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Golden AMIs
+  viewRegex: ((.*)gold-(.*))
+  scriptPath: ops/gold-ami/Jenkinsfile-UBNT
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true

@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "Warner Media Terrafrom EFD S3 Buckets"
+
+Parameters:
+  Environment:
+    Description: env
+    Default: dev
+    Type: String
+    AllowedValues:
+      - dev
+      - stg
+      - prod
+
+Resources:
+  TerraformBackendState:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-backend-state"
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: "Abort Incomplete Multipart Uploads"
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 30
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-backend-state"
+        - Key: Attributes
+          Value: state
+        - Key: Namespace
+          Value: wb-cn-tf
+        - Key: deny_http
+          Value: "true"
+        - Key: abort_incomplete_uploads
+          Value: "30"
+
+  TerraformBackentStatePolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TerraformBackendState
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Deny
+            Principal:
+              AWS: "*"
+            Action: s3:PutObject
+            Resource: !Sub "arn:aws:s3:::${AWS::StackName}-backend-state/*"
+            Condition:
+              StringNotEquals:
+                "s3:x-amz-server-side-encryption": AES256
+          - Effect: Deny
+            Principal:
+              AWS: "*"
+            Action: s3:PutObject
+            Resource: !Sub "arn:aws:s3:::${AWS::StackName}-backend-state/*"
+            Condition:
+              "Null":
+                "s3:x-amz-server-side-encryption": true
+          - Effect: Deny
+            Principal:
+              AWS: "*"
+            Action: s3:GetObject
+            Resource: !Sub "arn:aws:s3:::${AWS::StackName}-backend-state/*"
+            Condition:
+              Bool:
+                "aws:SecureTransport": false
+          - Effect: Deny
+            Principal:
+              AWS: "*"
+            Action: s3:GetObject
+            Resource: !Sub "arn:aws:s3:::${AWS::StackName}-backend-state/*"
+            Condition:
+              Bool:
+                "aws:SecureTransport": false
+          - Effect: Deny
+            Principal:
+              AWS: "*"
+            Action: s3:GetObject
+            Resource: !Sub "arn:aws:s3:::${AWS::StackName}-backend-state/*"
+            Condition:
+              Bool:
+                "aws:SecureTransport": false
+
+Outputs:
+  TerraformBackendState:
+    Description: efd terraform state
+    Value: !Ref TerraformBackendState
+    Export:
+      Name: !Sub "${AWS::StackName}-backend-state"

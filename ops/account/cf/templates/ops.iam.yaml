@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: ops iam users and groups
+
+Resources:
+  Admin:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: admin
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AdministratorAccess"
+
+  PaulSladek:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: "paul.sladek"
+      Groups:
+        - !Ref Admin
+
+  SaugatoBanerjee:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: "saugato.banerjee"
+      Groups:
+        - !Ref Admin
+
+  GalvinHsiu:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: "galvin.hsiu"
+      Groups:
+        - !Ref Admin
+
+  CmdOpsJenkins:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: "cmd.ops.jenkins"
+      Groups:
+        - !Ref CmdOpsJenkinsGroup
+
+  CmdOpsJenkinsGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: String
+      ManagedPolicyArns:
+        - String
+      Path: String
+      Policies:
+        - Policy

@@ -1,0 +1,4 @@
+ProjectName: blitline
+Environment: prod
+Ec2Stack: blitline-prod-worker-servers
+PeripheralsStack: blitline-prod-peripherals

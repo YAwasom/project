@@ -1,0 +1,2 @@
+Environment: stg
+AccessLogsBucketName: wb-mars-efd-stg-log-s3-bucket

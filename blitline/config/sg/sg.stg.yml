@@ -1,0 +1,4 @@
+ProjectName: blitline
+Environment: stg
+WbCidr: 168.161.192.0/21
+VpcStack: contentnow-vpc

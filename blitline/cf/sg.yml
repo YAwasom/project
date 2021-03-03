@@ -1,0 +1,415 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Blitline Security Group Definitions'
+
+Parameters:
+
+  ProjectName:
+    Description: Top level project name
+    Type: String
+    Default: blitline
+
+  Environment:
+    Description: Environment
+    Type: String
+    AllowedValues:
+    - dev
+    - qa
+    - stg
+    - prod
+    Default: dev
+
+  WbCidr:
+    Description: Wb Network Cidr
+    Type: String
+    Default: 168.161.192.0/21
+
+  VpcStack:
+    Description: Wb Network Cidr
+    Type: String
+    Default: contentnow-vpc-dev
+  
+  AllQPort:
+    Type: String
+    Default: 7788
+
+  CedisPort:
+    Type: String
+    Default: 9765
+
+  # #Required to resolve circular dependency between Lb Security Group and Web Security Group
+  # WebSecurityGroupId:
+  #   Description: Web Security Group Id
+  #   Type: String
+  #   Default: ""
+
+  PrivateSubnetA:
+    Type: String
+    Default: "10.0.32.0/20"
+  
+  PrivateSubnetB:
+    Type: String
+    Default: "10.0.64.0/20"
+
+
+Resources:
+  
+  MicroservicesLbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${ProjectName}-${Environment}-ms-lb-sg'
+      GroupName: !Sub '${ProjectName}-${Environment}-ms-lb-sg'
+      VpcId: 
+        Fn::ImportValue: !Sub "${VpcStack}-VPC"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: !Ref AllQPort
+        ToPort: !Ref AllQPort
+        SourceSecurityGroupId: !Ref WebSecurityGroup
+      - IpProtocol: tcp
+        FromPort: !Ref AllQPort
+        ToPort: !Ref AllQPort 
+        SourceSecurityGroupId: !Ref WorkerSecurityGroup
+      - IpProtocol: tcp
+        FromPort: !Ref CedisPort
+        ToPort: !Ref CedisPort
+        SourceSecurityGroupId: !Ref WebSecurityGroup
+      - IpProtocol: tcp
+        FromPort: !Ref CedisPort
+        ToPort: !Ref CedisPort 
+        SourceSecurityGroupId: !Ref WorkerSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-ms-lb-sg'
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: !Sub '${ProjectName}-${Environment}-ms-lb-sg'
+        - Key: Environment
+          Value: !Ref Environment
+
+  WebLbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${ProjectName}-${Environment}-web-lb-sg'
+      GroupName: !Sub '${ProjectName}-${Environment}-web-lb-sg'
+      VpcId: 
+        Fn::ImportValue: !Sub "${VpcStack}-VPC"
+      SecurityGroupIngress:
+
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: !Ref WbCidr
+
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: !Ref PrivateSubnetA
+
+      - IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: !Ref PrivateSubnetB
+      
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: !Ref WbCidr
+
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: !Ref PrivateSubnetA
+
+      - IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+        CidrIp: !Ref PrivateSubnetB
+
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-lb-sg'
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: !Sub '${ProjectName}-${Environment}-lb-sg'
+        - Key: Environment
+          Value: !Ref Environment
+
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${ProjectName}-${Environment}-web-sg'
+      GroupName: !Sub '${ProjectName}-${Environment}-web-sg'
+      VpcId:
+        Fn::ImportValue: !Sub "${VpcStack}-VPC"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 32768
+        ToPort: 61000
+        CidrIp : !Ref PrivateSubnetA
+
+      - IpProtocol: tcp
+        FromPort: 32768
+        ToPort: 61000
+        CidrIp : !Ref PrivateSubnetB
+
+      - IpProtocol: tcp
+        FromPort: 3000
+        ToPort: 3000
+        CidrIp : !Ref PrivateSubnetA
+
+      - IpProtocol: tcp
+        FromPort: 3000
+        ToPort: 3000
+        CidrIp : !Ref PrivateSubnetB
+      
+      - IpProtocol: tcp
+        FromPort: 8080
+        ToPort: 8080
+        CidrIp : !Ref PrivateSubnetA
+
+      - IpProtocol: tcp
+        FromPort: 8080
+        ToPort: 8080
+        CidrIp : !Ref PrivateSubnetB
+      
+      - IpProtocol  : tcp
+        FromPort    : 111
+        ToPort      : 111
+        CidrIp      : !Ref PrivateSubnetA
+
+      - IpProtocol  : tcp
+        FromPort    : 2049
+        ToPort      : 2049
+        CidrIp      : !Ref PrivateSubnetA
+
+      - IpProtocol  : tcp
+        FromPort    : 20048
+        ToPort      : 20048
+        CidrIp      : !Ref PrivateSubnetA
+
+      - IpProtocol  : tcp
+        FromPort    : 111
+        ToPort      : 111
+        CidrIp      : !Ref PrivateSubnetB
+
+      - IpProtocol  : tcp
+        FromPort    : 2049
+        ToPort      : 2049
+        CidrIp      : !Ref PrivateSubnetB
+
+      - IpProtocol  : tcp
+        FromPort    : 20048
+        ToPort      : 20048
+        CidrIp      : !Ref PrivateSubnetB
+
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-web-sg'
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: !Sub '${ProjectName}-${Environment}-web-sg'
+        - Key: Environment
+          Value: !Ref Environment 
+
+  WorkerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: WebSecurityGroup
+    Properties:
+      GroupDescription: !Sub '${ProjectName}-${Environment}-worker-sg'
+      GroupName: !Sub '${ProjectName}-${Environment}-worker-sg'
+      VpcId:
+        Fn::ImportValue: !Sub "${VpcStack}-VPC"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        SourceSecurityGroupId: !Ref WebSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-worker-sg'
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: !Sub '${ProjectName}-${Environment}-worker-sg'
+        - Key: Environment
+          Value: !Ref Environment 
+
+  MicroservicesSecurityGroup:
+    DependsOn: 
+      - WebSecurityGroup
+      - WorkerSecurityGroup
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${ProjectName}-${Environment}-microservices-sg'
+      GroupName: !Sub '${ProjectName}-${Environment}-microservices-sg'
+      VpcId:
+        Fn::ImportValue: !Sub "${VpcStack}-VPC"
+
+      SecurityGroupIngress:
+      - IpProtocol  : tcp
+        FromPort    : 32768
+        ToPort      : 65535
+        CidrIp      : !Ref PrivateSubnetA
+      - IpProtocol  : tcp
+        FromPort    : 32768
+        ToPort      : 65535
+        CidrIp      : !Ref PrivateSubnetB
+      - IpProtocol  : tcp
+        FromPort    : !Ref AllQPort
+        ToPort      : !Ref AllQPort
+        CidrIp      : !Ref PrivateSubnetA
+      - IpProtocol  : tcp
+        FromPort    : !Ref CedisPort
+        ToPort      : !Ref CedisPort
+        CidrIp      : !Ref PrivateSubnetA
+      - IpProtocol  : tcp
+        FromPort    : !Ref AllQPort
+        ToPort      : !Ref AllQPort
+        CidrIp      : !Ref PrivateSubnetB
+      - IpProtocol  : tcp
+        FromPort    : !Ref CedisPort
+        ToPort      : !Ref CedisPort
+        CidrIp      : !Ref PrivateSubnetB
+      - IpProtocol  : tcp
+        FromPort    : 111
+        ToPort      : 111
+        CidrIp      : !Ref PrivateSubnetA
+      - IpProtocol  : tcp
+        FromPort    : 2049
+        ToPort      : 2049
+        CidrIp      : !Ref PrivateSubnetA
+      - IpProtocol  : tcp
+        FromPort    : 20048
+        ToPort      : 20048
+        CidrIp      : !Ref PrivateSubnetA
+      - IpProtocol  : tcp
+        FromPort    : 111
+        ToPort      : 111
+        CidrIp      : !Ref PrivateSubnetB
+      - IpProtocol  : tcp
+        FromPort    : 2049
+        ToPort      : 2049
+        CidrIp      : !Ref PrivateSubnetB
+      - IpProtocol  : tcp
+        FromPort    : 20048
+        ToPort      : 20048
+        CidrIp      : !Ref PrivateSubnetB
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-microservices-sg'
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: !Sub '${ProjectName}-${Environment}-microservices-sg'
+        - Key: Environment
+          Value: !Ref Environment 
+
+  BlitlineLambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${ProjectName}-${Environment}-lambda-sg'
+      GroupName       : !Sub '${ProjectName}-${Environment}-lambda-sg'
+      VpcId: 
+        Fn::ImportValue: !Sub "${VpcStack}-VPC"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-lambda-sg'
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: !Sub '${ProjectName}-${Environment}-lambda-sg'
+        - Key: Environment
+          Value: !Ref Environment 
+
+  BlitlineEFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${ProjectName}-${Environment}-efs-sg'
+      GroupName       : !Sub '${ProjectName}-${Environment}-efs-sg'
+      VpcId: 
+        Fn::ImportValue: !Sub "${VpcStack}-VPC"
+      SecurityGroupIngress:
+        - IpProtocol  : tcp
+          FromPort    : 111
+          ToPort      : 111
+          CidrIp      : !Ref PrivateSubnetA
+        - IpProtocol  : tcp
+          FromPort    : 2049
+          ToPort      : 2049
+          CidrIp      : !Ref PrivateSubnetA
+        - IpProtocol  : tcp
+          FromPort    : 20048
+          ToPort      : 20048
+          CidrIp      : !Ref PrivateSubnetA
+        - IpProtocol  : tcp
+          FromPort    : 111
+          ToPort      : 111
+          CidrIp      : !Ref PrivateSubnetB
+        - IpProtocol  : tcp
+          FromPort    : 2049
+          ToPort      : 2049
+          CidrIp      : !Ref PrivateSubnetB
+        - IpProtocol  : tcp
+          FromPort    : 20048
+          ToPort      : 20048
+          CidrIp      : !Ref PrivateSubnetB
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-efs-sg'
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Purpose
+          Value: !Sub '${ProjectName}-${Environment}-efs-sg'
+        - Key: Environment
+          Value: !Ref Environment 
+          
+Outputs:
+  BlitlineLbSecurityGroup:
+    Description: Blitline Lb Security Group
+    Value: !Ref WebLbSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-lb-security-group"
+
+  BlitlineWebSecurityGroup:
+    Description: Blitline Web Security Group
+    Value: !Ref WebSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-web-security-group"
+
+  BlitlineWorkerSecurityGroup:
+    Description: Blitline Worker Security Group
+    Value: !Ref WorkerSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-worker-security-group"
+
+  BlitlineMicroservicesSecurityGroup:
+    Description: Blitline Micro Services Security Group
+    Value: !Ref MicroservicesSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-microservices-security-group"
+
+  BlitlineMicroservicesLbSecurityGroup:
+    Description: Blitline Microservices Lb Security Group
+    Value: !Ref MicroservicesLbSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-microservices-lb-security-group"
+
+  BlitlineLambdaSecurityGroup:
+    Description: Blitline Lambda  Security Group
+    Value: !Ref BlitlineLambdaSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-lambda-security-group"
+  
+  BlitlineEFSSecurityGroup:
+    Description: Blitline EFS Security Group
+    Value: !Ref BlitlineEFSSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-efs-security-group"

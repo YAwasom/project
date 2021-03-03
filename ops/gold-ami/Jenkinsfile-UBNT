@@ -1,0 +1,272 @@
+pipeline {
+  agent {
+    label 'dind-apline-1cpu-2gb'
+  }
+  stages {
+    stage('start') {
+        steps {
+            sendNotifications 'STARTED'
+        }
+    }
+    stage('ubnt-20-ec2-gold-image') {
+      environment {
+        AWS_REGION = 'us-west-2'
+        AWS = credentials('cmdt_jenkins_aws_credentials')
+      }
+      steps {
+        script {
+          // ubuntu-pro-server/images/hvm-ssd/ubuntu-focal-20.04-amd64-pro-serve-*
+          sh'''
+            packer build -timestamp-ui -var 'amibase=ami-063b8d05214908f17' -var 'namebase=gold-ubnt-20' ./ops/gold-ami/ubuntu/packer/ubuntu-packer.json
+          '''
+          distribute_ami_to_ssm('gold-ubnt-20')
+        }
+      }
+    }
+    stage('ubnt-18-ec2-gold-image') {
+      environment {
+        AWS_REGION = 'us-west-2'
+        AWS = credentials('cmdt_jenkins_aws_credentials')
+      }
+      steps {
+        script {
+          // ubuntu-pro-server/images/hvm-ssd/ubuntu-bionic-18.04-amd64-pro-serv-*
+          sh'''
+            packer build -timestamp-ui -var 'amibase=ami-0b32112bad074c820' -var 'namebase=gold-ubnt-18' ./ops/gold-ami/ubuntu/packer/ubuntu-packer.json
+          '''
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    // Contentnow accounts
+    stage('content_now_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('content_now_non_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    stage('content_now_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('content_now_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    // Ask accounts
+    stage('ask_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('ask_non_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    stage('ask_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('ask_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    // Mars efd accounts
+    stage('mars_efd_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('mars_efd_non_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    stage('mars_efd_stage_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('mars_efd_stage_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    stage('mars_efd_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('mars_efd_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    // Contentnow microservices accounts
+    stage('cn_micro_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('cn_micro_non_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    stage('cn_micro_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('cn_micro_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    // MarkLogic accounts
+    stage('mark_logic_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('mark_logic_non_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    stage('mark_logic_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('mark_logic_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    // Msb accounts
+    stage('msb_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('msb_non_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    stage('msb_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('msb_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    // Vis accounts
+    stage('vis_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('vis_non_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    stage('vis_preview_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('vis_preview_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    stage('vis_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('vis_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    // Holmes accounts
+    stage('holmes_nonprod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('holmes_nonprod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    stage('holmes_preview_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('holmes_preview_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+    stage('holmes_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('holmes_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm('gold-ubnt-20')
+          distribute_ami_to_ssm('gold-ubnt-18')
+        }
+      }
+    }
+  }
+  post {
+    always {
+      sendNotifications currentBuild.currentResult
+    }
+  }
+}
+
+def distribute_ami_to_ssm(ubntVersion) {
+  if ( ubntVersion == 'gold-ubnt-18' ) {
+    sh 'python3 ./ops/gold-ami/publishamis.py gold-ubnt-18-packer-manifest.json /ops/ami/recommended/ubnt18'
+  } else {
+    sh 'python3 ./ops/gold-ami/publishamis.py gold-ubnt-20-packer-manifest.json /ops/ami/recommended/ubnt20'
+  }
+}

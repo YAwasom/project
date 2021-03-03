@@ -1,0 +1,41 @@
+pipeline {
+    agent {
+        label "dind-apline-05cpu-1gb"
+    }
+    stages{
+        stage('start') {
+            steps {
+                sendNotifications "STARTED"
+            }
+        }
+        stage('build image') {
+            steps {
+                dir('ops/jenkins/build-agents/ubuntu/openjdk/jdk-8'){
+                    script {
+                        docker.withRegistry('https://348180535083.dkr.ecr.us-west-2.amazonaws.com', 'ecr:us-west-2:cmdt_jenkins_aws_credentials' ) {
+                            docker.build("cmd/ubuntu-openjdk:${env.GIT_COMMIT.take(7)}")
+                            docker.build("cmd/ubuntu-openjdk:jdk-8")
+                        }
+                    }
+                }
+            }
+        }
+        stage('push image') {
+            steps {
+                dir('ops/jenkins/build-agents/ubuntu/openjdk/jdk-8'){
+                    script {
+                        docker.withRegistry('https://348180535083.dkr.ecr.us-west-2.amazonaws.com', 'ecr:us-west-2:cmdt_jenkins_aws_credentials') {
+                            docker.image("cmd/ubuntu-openjdk:${env.GIT_COMMIT.take(7)}").push()
+                            docker.image("cmd/ubuntu-openjdk:jdk-8").push()
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            sendNotifications currentBuild.currentResult
+        }
+    }
+}

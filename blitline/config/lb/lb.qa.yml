@@ -1,0 +1,15 @@
+VpcStack                  : contentnow-vpc-dev
+ProjectName               : blitline
+Environment               : qa
+SecurityGroupStack        : blitline-qa-sg
+ActiveSecurityGroup       : microservices-lb-security-group
+AllQPort                  : "7788"
+WbCidr                    : "168.161.192.0/21"
+BlitlineHostedZone        : Z05742055F5GUYARQADB
+MicroservicesLbDnsPrefix  : "ms-qa"
+InternalDns               : "blitline.warnerbros.com."
+AllowedAWSAccount         : "arn:aws:iam::656419642964:root,arn:aws:iam::348180535083:root"
+LongpollingCachePort      : 8080
+WebDnsPrefix              : qa
+HealthCheckIntervalSecs   : 10
+AlbCertArnId              : 1e0d672b-0ad8-4a03-8e63-90d2106d0d99

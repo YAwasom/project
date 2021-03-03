@@ -1,0 +1,262 @@
+pipeline {
+  agent {
+    label "dind-apline-1cpu-2gb"
+  }
+  stages {
+    stage('start') {
+        steps {
+            sendNotifications "STARTED"
+        }
+    }
+    stage('amz2-ecs-gold-image'){
+      environment{
+        AWS_REGION = "us-west-2"
+        AWS = credentials("cmdt_jenkins_aws_credentials")
+      }
+      steps{
+        script {
+          sh '''
+            CBCODE=$(aws ssm get-parameters --region us-west-2 \
+              --names /ops/security/cbth/company_code \
+              --query Parameters[0].Value --with-decryption --output text )
+
+            LATEST_BASE_AMI=$(aws ssm get-parameters --region us-west-2 \
+              --names /aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id \
+              --query Parameters[0].Value --with-decryption --output text )
+
+            packer build -timestamp-ui -var "amibase=$LATEST_BASE_AMI" -var "namebase=gold-amz2-ecs-gp2" -var "cbcode=$CBCODE" ./ops/gold-ami/amz2/packer/amz2-packer.json
+          '''
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    // Contentnow accounts
+    stage('content_now_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("content_now_non_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    stage('content_now_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("content_now_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    // Ask accounts
+    stage('ask_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("ask_non_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    stage('ask_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("ask_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    // Mars efd accounts
+    stage('mars_efd_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("mars_efd_non_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    stage('mars_efd_stage_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("mars_efd_stage_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }    
+    stage('mars_efd_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("mars_efd_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    // Contentnow microservices accounts
+    stage('cn_micro_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("cn_micro_non_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    stage('cn_micro_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("cn_micro_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    // MarkLogic accounts
+    stage('mark_logic_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("mark_logic_non_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    stage('mark_logic_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("mark_logic_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    // Msb accounts
+    stage('msb_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("msb_non_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    stage('msb_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("msb_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    // Wflow accounts
+    stage('wflow_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("wflow_non_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    stage('wflow_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("wflow_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    // Vis accounts
+    stage('vis_non_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("vis_non_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    stage('vis_preview_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("vis_preview_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    stage('vis_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials("vis_prod_custodian_aws_credentials_us_west_2")
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    // Holmes accounts
+    stage('holmes_nonprod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('holmes_nonprod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    stage('holmes_preview_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('holmes_preview_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+    stage('holmes_prod_custodian_aws_credentials_us_west_2') {
+      environment {
+        AWS = credentials('holmes_prod_custodian_aws_credentials_us_west_2')
+      }
+      steps {
+        script {
+          distribute_ami_to_ssm()
+        }
+      }
+    }
+  }
+  post {
+    always {
+      sendNotifications currentBuild.currentResult
+    }
+  }
+}
+
+def distribute_ami_to_ssm() {
+  sh "python3 ./ops/gold-ami/publishamis.py packer-manifest.json /ops/ami/recommended/ecs"
+}

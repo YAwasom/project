@@ -1,0 +1,91 @@
+---
+- isMultiBranch: true
+  projectName: nest-nuxeo-env-config
+  url: git@github.com:wm-msc-malt/nest-env-config.git
+  description: nest environment config
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo
+  viewRegex: ((.*)(nuxeo-bundle-*|nuxeo-core-*|nuxeo-env-*)(.*))
+  scmScanInterval: 5m
+  includes: develop develop-next *-*.*
+  tagDiscovery: true
+
+- isMultiBranch: true
+  projectName: nuxeo-bundle-dccomics
+  url: git@github.com:wm-msc-malt/nuxeo-bundle-dccomics.git
+  description: Nuxeo bundle of DC comics
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo
+  viewRegex: ((.*)(nuxeo-bundle-*|nuxeo-core-*|nuxeo-env-*)(.*))
+  scmScanInterval: 5m
+  includes: develop develop-next
+
+- isMultiBranch: true
+  projectName: nuxeo-bundle-bootstrap
+  url: git@github.com:wm-msc-malt/nuxeo-bundle-bootstrap.git
+  description: nuxeo bundle bootstrap
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo
+  viewRegex: ((.*)(nuxeo-bundle-*|nuxeo-core-*|nuxeo-env-*)(.*))
+  scmScanInterval: 5m
+  includes: develop develop-next
+
+- isMultiBranch: true
+  projectName: nuxeo-bundle-wbcommons
+  url: git@github.com:wm-msc-malt/nuxeo-bundle-wbcommons.git
+  description: nuxeo bundle wbcommons
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo
+  viewRegex: ((.*)(nuxeo-bundle-*|nuxeo-core-*|nuxeo-env-*)(.*))
+  scmScanInterval: 5m
+  includes: develop develop-next
+
+- isMultiBranch: true
+  projectName: nuxeo-core-okta
+  url: git@github.com:wm-msc-malt/nuxeo-core-okta.git
+  description: Nuxeo Core Okta
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo
+  viewRegex: ((.*)(nuxeo-bundle-*|nuxeo-core-*|nuxeo-env-*)(.*))
+  scmScanInterval: 5m
+  includes: develop develop-next
+
+- isMultiBranch: true
+  projectName: nuxeo-core-aspera
+  url: git@github.com:wm-msc-malt/nuxeo-core-aspera.git
+  description: nuxeo core aspera
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo
+  viewRegex: ((.*)(nuxeo-bundle-*|nuxeo-core-*|nuxeo-env-*)(.*))
+  scmScanInterval: 5m
+  includes: develop develop-next master
+
+- isMultiBranch: true
+  projectName: nuxeo-core-binarymanager-s3
+  url: git@github.com:wm-msc-malt/nuxeo-core-binarymanager-s3.git
+  description: nuxeo core binarymanager s3
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo
+  viewRegex: ((.*)(nuxeo-bundle-*|nuxeo-core-*|nuxeo-env-*)(.*))
+  scmScanInterval: 5m
+  includes: develop develop-next
+
+- isMultiBranch: true
+  projectName: zip-stream
+  url: git@github.com:wm-msc-malt/nuxeo-core-binarymanager-s3.git
+  description: contentnow zip stream service
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Zip Stream
+  viewRegex: ((.*)zip-stream(.*))
+  scmScanInterval: 5m
+  includes: develop master
+
+# - isMultiBranch: true
+#   projectName: nuxeo-data-etl
+#   url: git@github.com:wm-msc-malt/nuxeo-data-etl.git
+#   description: nuxeo data etl
+#   credentials: cmdt_jenkins_github_ssh_key
+#   viewName: Nuxeo
+#   viewRegex: ((.*)(nuxeo-bundle-*|nuxeo-core-*|nuxeo-env-*)(.*))
+#   scmScanInterval: 5m
+#   includes: develop develop-next

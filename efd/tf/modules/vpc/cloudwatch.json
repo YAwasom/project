@@ -1,0 +1,113 @@
+{
+    "agent": {
+      "metrics_collection_interval": 10,
+      "logfile": "/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log"
+    },
+    "metrics": {
+      "metrics_collected": {
+        "cpu": {
+          "resources": [
+            "*"
+          ],
+          "measurement": [
+            {"name": "cpu_usage_idle", "rename": "CPU_USAGE_IDLE", "unit": "Percent"},
+            {"name": "cpu_usage_nice", "unit": "Percent"},
+            "cpu_usage_guest"
+          ],
+          "totalcpu": false,
+          "metrics_collection_interval": 10,
+          "append_dimensions": {
+            "customized_dimension_key_1": "customized_dimension_value_1",
+            "customized_dimension_key_2": "customized_dimension_value_2"
+          }
+        },
+        "disk": {
+          "resources": [
+            "/",
+            "/tmp"
+          ],
+          "measurement": [
+            {"name": "free", "rename": "DISK_FREE", "unit": "Gigabytes"},
+            "total",
+            "used"
+          ],
+           "ignore_file_system_types": [
+            "sysfs", "devtmpfs"
+          ],
+          "metrics_collection_interval": 60,
+          "append_dimensions": {
+            "customized_dimension_key_3": "customized_dimension_value_3",
+            "customized_dimension_key_4": "customized_dimension_value_4"
+          }
+        },
+        "swap": {
+          "measurement": [
+            "swap_used",
+            "swap_free",
+            "swap_used_percent"
+          ]
+        },
+        "mem": {
+          "measurement": [
+            "mem_used",
+            "mem_cached",
+            "mem_total"
+          ],
+          "metrics_collection_interval": 1
+        },
+        "net": {
+          "resources": [
+            "eth0"
+          ],
+          "measurement": [
+            "bytes_sent",
+            "bytes_recv",
+            "drop_in",
+            "drop_out"
+          ]
+        }
+      },
+      "aggregation_dimensions" : [["ImageId"], ["InstanceId", "InstanceType"], ["d1"],[]],
+      "force_flush_interval" : 30
+    },
+    "logs": {
+      "logs_collected": {
+        "files": {
+          "collect_list": [
+            {
+              "file_path": "/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log",
+              "log_group_name": "/efd/ecs/efd-${efdenv}",
+              "log_stream_name": "{local_hostname}-amazon-cloudwatch-agent.log",
+              "timezone": "UTC"
+            },
+            {
+              "file_path": "/var/log/messages",
+              "log_group_name": "/efd/ecs/efd-${efdenv}",
+              "log_stream_name": "{local_hostname}-messages",
+              "timezone": "UTC"
+            },
+            {
+                "file_path": "/var/log/syslog",
+                "log_group_name": "/efd/ecs/efd-${efdenv}",
+                "log_stream_name": "{local_hostname}-syslog",
+                "timezone": "UTC"
+            },
+            {
+                "file_path": "/var/log/httpd/*",
+                "log_group_name": "/efd/ecs/efd-${efdenv}",
+                "log_stream_name": "{local_hostname}-httpd",
+                "timezone": "UTC"
+            },
+            {
+                "file_path": "/var/log/secure",
+                "log_group_name": "/efd/ecs/efd-${efdenv}",
+                "log_stream_name": "{local_hostname}-secure",
+                "timezone": "UTC"
+            }
+          ]
+        }
+      },
+      "log_stream_name": "/efd/ecs/efd-${efdenv}-{local_hostname}",
+      "force_flush_interval" : 15
+    }
+  }

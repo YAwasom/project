@@ -1,0 +1,228 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  VPCCidr:
+    Description: "VPC Cidr Mask"
+    Type: String
+  PublicSubnetCidrA:
+    Description: "Public Subnet"
+    Type: String
+  PublicSubnetCidrB:
+    Description: "Public Subnet"
+    Type: String
+  PrivateSubnetCidrA:
+    Description: "Private Subnet"
+    Type: String
+  PrivateSubnetCidrB:
+    Description: "Private Subnet"
+    Type: String
+  VPCName:
+    Description: "VPC Name"
+    Type: String
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties: 
+      CidrBlock: !Ref VPCCidr
+      Tags: 
+        - 
+          Key: Name
+          Value: !Ref VPCName
+
+  NatIPa:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+ 
+  NatIPb:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+
+  NatGWa:
+    Type: AWS::EC2::NatGateway
+    Properties: 
+      AllocationId: !GetAtt NatIPa.AllocationId
+      SubnetId: !Ref PublicSubnetA
+      Tags: 
+        - 
+          Key: Name
+          Value: !Sub "${AWS::StackName}-natgwa"
+
+  NatGWb:
+    Type: AWS::EC2::NatGateway
+    Properties: 
+      AllocationId: !GetAtt NatIPb.AllocationId
+      SubnetId: !Ref PublicSubnetB
+      Tags: 
+        - 
+          Key: Name
+          Value: !Sub "${AWS::StackName}-natgwb"
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnetCidrA
+      AvailabilityZone: !Select [ 0, !GetAZs ]
+      Tags:
+      - 
+        Key: Name
+        Value: !Sub "wb-cmd-${AWS::StackName}-public-subnet-a"
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnetCidrB
+      AvailabilityZone: !Select [1, !GetAZs ]
+      Tags:
+      - 
+        Key: Name
+        Value: !Sub "wb-cmd-${AWS::StackName}-public-subnet-b"
+
+
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetCidrA
+      AvailabilityZone: !Select [0, !GetAZs ]
+      Tags:
+      - 
+        Key: Name
+        Value: !Sub "wb-cmd-${AWS::StackName}-private-subnet-a"
+
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetCidrB
+      AvailabilityZone: !Select [1, !GetAZs ]
+      Tags:
+      - 
+        Key: Name
+        Value: !Sub "wb-cmd-${AWS::StackName}-private-subnet-b"
+      
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+        Tags:
+        - 
+          Key: Name
+          Value: !Sub "${AWS::StackName}-ig"
+    DependsOn: VPC
+
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+        InternetGatewayId: !Ref InternetGateway
+        VpcId: !Ref VPC
+
+  PublicRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - 
+        Key: Name
+        Value: wb-cmd-${AWS::StackName}-public-rt-a
+
+  PublicRouteA:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway 
+
+  PrivateRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - 
+        Key: Name
+        Value: wb-cmd-${AWS::StackName}-private-rt-a
+
+  PrivateRouteTableB:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - 
+        Key: Name
+        Value: wb-cmd-${AWS::StackName}-private-rt-b
+
+  PrivateRouteA:    
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGWa
+
+  PrivateRouteB:    
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableB
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGWb
+
+  PublicSubnetARouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTableA
+
+  PublicSubnetBRouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTableA
+
+  PrivateSubnetARouteTableAssociationA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRouteTableA
+
+  PrivateSubnetBRouteTableAssociationB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetB
+      RouteTableId: !Ref PrivateRouteTableB 
+Outputs: 
+    StackVPC: 
+      Description: "VPC ID"
+      Value:  !Ref VPC
+      Export: 
+        Name: !Sub ${AWS::StackName}-VPCID
+    VPCCidr:
+      Description: "VPC Cidr Mask"
+      Value:  !Ref VPCCidr
+      Export:
+        Name: !Sub ${AWS::StackName}-VPCCidr
+    PrivateSubnetA:
+      Description: "Private Subnet A"
+      Value:  !Ref PrivateSubnetA
+      Export:
+        Name: !Sub ${AWS::StackName}-PrivateSubnetAID
+    PrivateSubnetB:
+      Description: "Private Subnet B"
+      Value:  !Ref PrivateSubnetB
+      Export:
+        Name: !Sub ${AWS::StackName}-PrivateSubnetBID
+    PublicSubnetA:
+      Description: "Public Subnet A"
+      Value:  !Ref PublicSubnetA
+      Export:
+        Name: !Sub ${AWS::StackName}-PublicSubnetAID
+    PublicSubnetB:
+      Description: "Public Subnet B"
+      Value:  !Ref PublicSubnetB
+      Export:
+        Name: !Sub ${AWS::StackName}-PublicSubnetBID

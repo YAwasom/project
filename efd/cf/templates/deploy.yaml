@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "efd jenkins role for s3"
+
+Parameters:
+  Environment:
+    Default: "dev"
+    Description: efd environment
+    Type: String
+
+Resources:
+  AssumeJenkinsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-${AWS::Region}-role"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - arn:aws:iam::348180535083:role/wb-cmd-ops-role-jenkins-us-west-2
+            Action: ["sts:AssumeRole"]
+      Path: /
+      Policies:
+        - PolicyName: s3deploy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:GetBucketLocation
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                  - s3:DeleteObject
+                  - s3:AbortMultipartUpload
+                  - s3:ListBucketMultipartUploads
+                  - s3:ListMultipartUploadParts
+                Resource:
+                  - !Sub "arn:aws:s3:::efd-${Environment}-s3-code-repository"
+                  - !Sub "arn:aws:s3:::efd-${Environment}-s3-code-repository/*"
+              - Effect: Allow
+                Action:
+                  - autoscaling:UpdateAutoScalingGroup
+                Resource: "*"
+               
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-${AWS::Region}-role"
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  AssumeDeployRole:
+    Description: jenkins role to assume for deployment of war
+    Value: !Ref AssumeJenkinsRole
+    Export:
+      # efd-dev-jenkins-deploy-us-west-2-role
+      Name: !Sub "${AWS::StackName}-${AWS::Region}-role"

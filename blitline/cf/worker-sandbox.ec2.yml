@@ -1,0 +1,492 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "Blitline EC2s for web/microservices/workers"
+
+Parameters:
+  ProjectName:
+    Description: Top level project name
+    Type: String
+
+  SubProject:
+    Type: String
+
+  MetricNamePrefix:
+    Type: String
+
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+    AllowedValues:
+      - dev
+      - qa
+      - stg
+      - prod
+
+  VpcStack:
+    Description: Stack name for the main VPC.
+    Type: String
+
+  KeyPairName:
+    Description: Pem key to use for ssh
+    Type: String
+    Default: contentnow-dev
+
+  Ec2InstanceType:
+    Description: Ec2 Instance Type
+    Type: String
+    Default: m3.medium
+
+  MaxEc2AsgCount:
+    Description: Max Count of Instances
+    Type: String
+    Default: 2
+
+  DesiredEc2Capacity:
+    Description: Desired Count of Instances
+    Type: String
+    Default: 2
+
+  ActiveSecurityGroup:
+    Description: Web Security Group
+    Type: String
+
+  SecurityGroupStack:
+    Description: Security Group Stack
+    Type: String
+
+  EBSBlockDeviceName:
+    Description: Name of the ecs volume for docker storage
+    Type: String
+    Default: xvdcz
+
+  EBSVolumeSize:
+    Description: Size of the Docker Storage Volume
+    Type: String
+    Default: 22
+
+  EBSVolumeType:
+    Description: gp2/io1
+    Type: String
+    Default: gp2
+
+  EBSVolumePIOPS:
+    Description: iops value (if ebs volume is an iops volume)
+    Type: String
+    Default: 300
+
+  ServiceType:
+    Type: String
+    Default: SERVICE_TYPE_WORKER
+
+  MinEC2Count:
+    Description: Minimum Number Of Instances In Service
+    Type: String
+    Default: 1
+
+  FileSystemDns:
+    Description: 'Dns of EFS filesystem'
+    Type: String
+    Default: None
+
+  EFSMountLocation:
+    Description: 'Location of folder where EFS storage should be saved'
+    Type: String
+    Default: '~/tmp/efs'
+
+  EcsOptimizedAmi:
+      # e.g. public image amzn2-ami-ecs-hvm-2.0.20190301-x86_64-ebs
+      Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+      Default: /ops/ami/recommended/ecs
+
+
+Conditions:
+  IsDevEnv:
+    !Or [!Equals [!Ref Environment, "dev"], !Equals [!Ref Environment, "qa"]]
+
+  UsePIops:
+    Fn::Equals:
+      - Ref: EBSVolumeType
+      - io1
+
+  IsWorker: !Equals [!Ref ServiceType, "SERVICE_TYPE_WORKER"]
+
+Resources:
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-${AWS::Region}-ec2-assume"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "ecs.amazonaws.com"
+                - "ec2.amazonaws.com"
+            Action: ["sts:AssumeRole"]
+      Path: /
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        - "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+      Policies:
+        - PolicyName: cf-signal-resource
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:SignalResource
+                Resource: "*"
+        - PolicyName: cloudwatch-log-metrics
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: "*"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-${AWS::Region}-ec2-assume"
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Function
+          Value: !Ref SubProject
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles: [!Ref EC2Role]
+
+  EcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${AWS::StackName}-cluster"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-cluster"
+        - Key: Environment
+          Value: !Ref Environment
+
+  EcsAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn: EcsCluster
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: "PT5M"
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: 1
+        MaxBatchSize: 2
+        PauseTime: "PT5M"
+        WaitOnResourceSignals: true
+    Properties:
+      LaunchConfigurationName: !Ref EcsClusterLaunchConfiguration
+      AvailabilityZones:
+        - Fn::ImportValue: !Sub "${VpcStack}-AZA"
+        - Fn::ImportValue: !Sub "${VpcStack}-AZB"
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub "${VpcStack}-SubnetAPrivate"
+        - Fn::ImportValue: !Sub "${VpcStack}-SubnetBPrivate"
+      MinSize: !Ref MinEC2Count
+      MaxSize: !Ref MaxEc2AsgCount
+      DesiredCapacity: !Ref DesiredEc2Capacity
+      HealthCheckType: EC2
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-cluster-asg"
+          PropagateAtLaunch: true
+        - Key: Environment
+          Value: !Ref Environment
+          PropagateAtLaunch: true
+
+  EcsClusterLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          default:
+            - 01_setupCfnHup
+            - 02_config-amazon-cloudwatch-agent
+            - 03_restart_amazon-cloudwatch-agent
+          UpdateEnvironment:
+            - 02_config-amazon-cloudwatch-agent
+            - 03_restart_amazon-cloudwatch-agent
+        02_config-amazon-cloudwatch-agent:
+          files:
+            "/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json":
+              content: !Sub |
+                {
+                  "agent":{
+                    "metrics_collection_interval": 60
+                  },
+                  "metrics": {
+                    "append_dimensions": {
+                      "AutoScalingGroupName": "${!aws:AutoScalingGroupName}",
+                      "ImageId": "${!aws:ImageId}",
+                      "InstanceId": "${!aws:InstanceId}",
+                      "InstanceType": "${!aws:InstanceType}"
+                    },
+                    "metrics_collected": {
+                      "cpu": {
+                        "measurement": [
+                          "cpu_usage_idle",
+                          "cpu_usage_iowait",
+                          "cpu_usage_user",
+                          "cpu_usage_system"
+                        ],
+                        "totalcpu": false
+                      },
+                      "disk": {
+                        "measurement": [
+                          "total",
+                          "used_percent",
+                          "inodes_free"
+                        ],
+                        "resources": [
+                          "*"
+                        ]
+                      },
+                      "diskio": {
+                        "measurement": [
+                          "io_time",
+                          "read_time",
+                          "write_time"
+                        ],
+                        "resources": [
+                          "*"
+                        ]
+                      },
+                      "processes": {
+                        "measurement": [
+                          "running",
+                          "blocked",
+                          "total",
+                          "total_threads"
+                        ],
+                        "resources": [
+                          "*"
+                        ]
+                      },
+                      "mem": {
+                        "measurement": [
+                          "free",
+                          "used_percent",
+                          "available_percent"
+                        ]
+                      },
+                      "swap": {
+                        "measurement": [
+                          "free",
+                          "used_percent"
+                        ]
+                      }
+                    }
+                  }
+                }
+        03_restart_amazon-cloudwatch-agent:
+          commands:
+            01_stop_service:
+              command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a stop
+            02_start_service:
+              command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+        01_setupCfnHup:
+          files:
+            "/etc/cfn/cfn-hup.conf":
+              content: !Sub |
+                [main]
+                stack=${AWS::StackId}
+                region=${AWS::Region}
+                interval=1
+              mode: "000400"
+              owner: root
+              group: root
+            "/etc/cfn/hooks.d/amazon-cloudwatch-agent-auto-reloader.conf":
+              content: !Sub |
+                [cfn-auto-reloader-hook]
+                triggers=post.update
+                path=Resources.EcsClusterLaunchConfiguration.Metadata.AWS::CloudFormation::Init.02_config-amazon-cloudwatch-agent
+                action=/opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource EcsClusterLaunchConfiguration --region ${AWS::Region} --configsets UpdateEnvironment
+                runas=root
+              mode: "000400"
+              owner: root
+              group: root
+            "/lib/systemd/system/cfn-hup.service":
+              content: !Sub |
+                [Unit]
+                Description=cfn-hup daemon
+                [Service]
+                Type=simple
+                ExecStart=/opt/aws/bin/cfn-hup
+                Restart=always
+                [Install]
+                WantedBy=multi-user.target
+          commands:
+            01enable_cfn_hup:
+              command: !Sub |
+                systemctl enable cfn-hup.service
+            02start_cfn_hup:
+              command: !Sub |
+                systemctl start cfn-hup.service
+    Properties:
+      ImageId: !Ref EcsOptimizedAmi
+      SecurityGroups:
+        - Fn::ImportValue: !Sub "${SecurityGroupStack}-${ActiveSecurityGroup}"
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            DeleteOnTermination: true
+            VolumeType: gp2
+            VolumeSize: 100
+            Encrypted: true
+        - DeviceName: !Sub ${EBSBlockDeviceName}
+          Ebs:
+            Encrypted: true
+            VolumeSize: !Ref EBSVolumeSize
+            DeleteOnTermination: true
+            VolumeType: !Ref EBSVolumeType
+            Iops:
+              Fn::If:
+                - UsePIops
+                - !Ref EBSVolumePIOPS
+                - !Ref AWS::NoValue
+
+      InstanceType: !Ref Ec2InstanceType
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      KeyName: !If [IsDevEnv, "contentnow-dev", "contentnow-prod"]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # Logs can be found at /var/log/user-data.log
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+          cat <<'EOF' >> /etc/ecs/ecs.config
+          #!/bin/bash
+          ECS_CLUSTER=${EcsCluster}
+          ECS_IMAGE_MINIMUM_CLEANUP_AGE=10m
+          ECS_ENGINE_TASK_CLEANUP_WAIT_DURATION=20m
+          ECS_NUM_IMAGES_DELETE_PER_CYCLE=100
+          EOF
+
+          echo "Setting up Custom Metrics Logging"
+          echo " - Installing Aws Cli"
+          yum update -y
+          yum -y install aws-cli
+          echo " - Installing jq"
+          yum -y install jq
+          echo " - Creating log script"
+          # Set up custom autoscaling metrics
+          METRICS_BIN="/usr/local/bin"
+          touch $METRICS_BIN/${MetricNamePrefix}-metrics-logger.sh
+          chmod +x $METRICS_BIN/${MetricNamePrefix}-metrics-logger.sh
+          cat <<'EOF' >> $METRICS_BIN/${MetricNamePrefix}-metrics-logger.sh
+          #!/bin/bash
+          echo "Running ${MetricNamePrefix} Metrics Log"
+          REGION=${AWS::Region}
+          LOG_NAME_SPACE="Blitline/${Environment}/${MetricNamePrefix}/Allq"
+          LOG_DATA=$(curl http://localhost:8090/stats)
+          ACTION_COUNT=$(echo $LOG_DATA | jq -r ".[0].action_count")
+          aws cloudwatch put-metric-data --region $REGION --metric-name ${MetricNamePrefix}-action-count --namespace $LOG_NAME_SPACE --value $ACTION_COUNT --unit Count
+          for STAT in $(echo $LOG_DATA | jq -c ".[0].stats[]")
+          do
+
+            TUBE=$(echo $STAT | jq -r ".tube")
+            READY=$(echo $STAT | jq -r ".ready")
+            RESERVED=$(echo $STAT | jq -r ".reserved")
+            DELAYED=$(echo $STAT | jq -r ".delayed")
+            BURIED=$(echo $STAT | jq -r ".buried")
+            PARENTS=$(echo $STAT | jq -r ".parents")
+
+            aws cloudwatch put-metric-data --region $REGION --metric-name ${MetricNamePrefix}-$TUBE-ready --namespace $LOG_NAME_SPACE --value $READY --unit Count
+            aws cloudwatch put-metric-data --region $REGION --metric-name ${MetricNamePrefix}-$TUBE-reserved --namespace $LOG_NAME_SPACE --value $RESERVED --unit Count
+            aws cloudwatch put-metric-data --region $REGION --metric-name ${MetricNamePrefix}-$TUBE-delayed --namespace $LOG_NAME_SPACE --value $DELAYED --unit Count
+            aws cloudwatch put-metric-data --region $REGION --metric-name ${MetricNamePrefix}-$TUBE-buried --namespace $LOG_NAME_SPACE --value $BURIED --unit Count
+            aws cloudwatch put-metric-data --region $REGION --metric-name ${MetricNamePrefix}-$TUBE-parents --namespace $LOG_NAME_SPACE --value $PARENTS --unit Count
+          done
+          echo "Finished Deploying Metrics Log"
+          EOF
+
+          # Send custom metrics to CloudWatch for autoscaling via AllQ Metrics
+          echo "* * * * * root $METRICS_BIN/${MetricNamePrefix}-metrics-logger.sh " | tee -a /etc/cron.d/allq-metrics
+          echo "Finished setting up Metrics Logging"
+
+
+          # Install bootstrap, logs, nfs utils and ssm agent
+          yum -y install aws-cfn-bootstrap
+          rpm -Uvh https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource EcsClusterLaunchConfiguration --region ${AWS::Region} --configsets default
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource EcsAutoScalingGroup --region ${AWS::Region}
+
+  ClusterScaleUpPolicy:
+    Condition: IsWorker
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref EcsAutoScalingGroup
+      EstimatedInstanceWarmup: 120
+      MetricAggregationType: Average
+      PolicyType: StepScaling
+      StepAdjustments:
+        - MetricIntervalLowerBound: 0
+          ScalingAdjustment: 1
+
+  ClusterScaleUpAlarm:
+    Condition: IsWorker
+
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: CPU utilization avg at 50% during the last 5 minutes
+      AlarmName: !Sub "Blitline-${AWS::StackName}-ClusterScaleUpAlarm"
+      AlarmActions:
+        - !Ref ClusterScaleUpPolicy
+      Dimensions:
+        - Name: ClusterName
+          Value: !Sub "${AWS::StackName}-cluster"
+      MetricName: CPUReservation
+      Namespace: AWS/ECS
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Statistic: Average
+      Threshold: 50
+      Period: 60
+      EvaluationPeriods: 5
+      TreatMissingData: notBreaching
+
+  ClusterScaleDownPolicy:
+    Condition: IsWorker
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: PercentChangeInCapacity
+      AutoScalingGroupName: !Ref EcsAutoScalingGroup
+      Cooldown: 300
+      ScalingAdjustment: -50
+
+  ClusterScaleDownAlarm:
+    Condition: IsWorker
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: CPU utilization is under 50% for the last 5 min
+      AlarmName: !Sub "Blitline-${AWS::StackName}-ClusterScaleDownAlarm"
+      AlarmActions:
+        - !Ref ClusterScaleDownPolicy
+      Dimensions:
+        - Name: ClusterName
+          Value: !Sub "${AWS::StackName}-cluster"
+      MetricName: CPUReservation
+      Namespace: AWS/ECS
+      ComparisonOperator: LessThanThreshold
+      Statistic: Maximum
+      Threshold: 20
+      Period: 60
+      EvaluationPeriods: 30
+      TreatMissingData: notBreaching
+
+Outputs:
+  EcsAutoScalingGroup:
+    Description: Ref of auto-scaling Group
+    Value: !Ref EcsAutoScalingGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-EcsAutoScalingGroup
+  EcsCluster:
+    Description: Ecs Cluster that was created. This will be populated by the ecs cf scripts
+    Value: !Ref EcsCluster
+    Export:
+      Name: !Sub ${AWS::StackName}-EcsCluster

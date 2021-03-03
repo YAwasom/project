@@ -1,0 +1,84 @@
+jenkins:
+  # ECS slave task definitions
+  clouds:
+    # Infra Build Tools
+    - ecs: # 1cpu-2gb
+        cluster: "arn:aws:ecs:${AWS_REGION}:${AWS_ACCOUNT_ID}:cluster/wb-cmd-${AWS_JENKINS_ENVIRONMENT}-ecs-jenkins-cluster"
+        credentialsId: "cmdt_jenkins_aws_credentials"
+        jenkinsUrl: ${JENKINS_HOST_URL}
+        name: infra-tools-alpine-1cpu-2gb
+        regionName: ${AWS_REGION}
+        retentionTimeout: 60
+        tunnel: "${JENKINS_TUNNEL_URL}:${JENKINS_SLAVE_PORT}"
+        templates:
+          - assignPublicIp: false
+            cpu: 1024
+            image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/cmd/jenkins-alpine-jnlp-infra-build-tools-slave
+            label: infra-tools-alpine-1cpu-2gb
+            launchType: EC2
+            memory: 2048
+            memoryReservation: 1024
+            networkMode: default
+            privileged: false
+            remoteFSRoot: /home/jenkins
+            templateName: infra-tools-alpine-1cpu-2gb
+    - ecs: # 1cpu-2gb
+        cluster: "arn:aws:ecs:${AWS_REGION}:${AWS_ACCOUNT_ID}:cluster/wb-cmd-${AWS_JENKINS_ENVIRONMENT}-ecs-jenkins-cluster"
+        credentialsId: "cmdt_jenkins_aws_credentials"
+        jenkinsUrl: ${JENKINS_HOST_URL}
+        name: infra-tools-ubuntu-1cpu-2gb
+        regionName: ${AWS_REGION}
+        retentionTimeout: 60
+        tunnel: "${JENKINS_TUNNEL_URL}:${JENKINS_SLAVE_PORT}"
+        templates:
+          - assignPublicIp: false
+            cpu: 1024
+            image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/cmd/jenkins-ubuntu-jnlp-infra-build-tools-slave
+            label: infra-tools-ubuntu-1cpu-2gb
+            launchType: EC2
+            memory: 2048
+            memoryReservation: 1024
+            networkMode: default
+            privileged: false
+            remoteFSRoot: /home/jenkins
+            templateName: infra-tools-ubuntu-1cpu-2gb
+    - ecs: # 05cpu-1gb
+        cluster: "arn:aws:ecs:${AWS_REGION}:${AWS_ACCOUNT_ID}:cluster/wb-cmd-${AWS_JENKINS_ENVIRONMENT}-ecs-jenkins-cluster"
+        credentialsId: "cmdt_jenkins_aws_credentials"
+        jenkinsUrl: ${JENKINS_HOST_URL}
+        name: infra-tools-alpine-05cpu-1gb
+        regionName: ${AWS_REGION}
+        retentionTimeout: 60
+        tunnel: "${JENKINS_TUNNEL_URL}:${JENKINS_SLAVE_PORT}"
+        templates:
+          - assignPublicIp: false
+            cpu: 512
+            image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/cmd/jenkins-alpine-jnlp-infra-build-tools-slave
+            label: infra-tools-alpine-05cpu-1gb
+            launchType: EC2
+            memory: 1024
+            memoryReservation: 512
+            networkMode: default
+            privileged: false
+            remoteFSRoot: /home/jenkins
+            templateName: infra-tools-alpine-05cpu-1gb
+    - ecs: # 05cpu-1gb
+        cluster: "arn:aws:ecs:${AWS_REGION}:${AWS_ACCOUNT_ID}:cluster/wb-cmd-${AWS_JENKINS_ENVIRONMENT}-ecs-jenkins-cluster"
+        credentialsId: "cmdt_jenkins_aws_credentials"
+        jenkinsUrl: ${JENKINS_HOST_URL}
+        name: infra-tools-ubuntu-05cpu-1gb
+        regionName: ${AWS_REGION}
+        retentionTimeout: 60
+        tunnel: "${JENKINS_TUNNEL_URL}:${JENKINS_SLAVE_PORT}"
+        templates:
+          - assignPublicIp: false
+            cpu: 512
+            image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/cmd/jenkins-ubuntu-jnlp-infra-build-tools-slave
+            label: infra-tools-ubuntu-05cpu-1gb
+            launchType: EC2
+            memory: 1024
+            memoryReservation: 512
+            networkMode: default
+            privileged: false
+            remoteFSRoot: /home/jenkins
+            templateName: infra-tools-ubuntu-05cpu-1gb

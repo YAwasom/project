@@ -1,0 +1,537 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: efd kms service keys
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+
+Resources:
+  Sqs:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      Enabled: true
+      KeyPolicy:
+        Id: !Sub "${AWS::StackName}-sqs"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+  SqsAlias:
+    Type: "AWS::KMS::Alias"
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-sqs"
+      TargetKeyId: !Ref Sqs
+
+  App:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      Enabled: true
+      KeyPolicy:
+        Id: !Sub "${AWS::StackName}-app"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+  AppAlias:
+    Type: "AWS::KMS::Alias"
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-app"
+      TargetKeyId: !Ref App
+
+  Web:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      Enabled: true
+      KeyPolicy:
+        Id: !Sub "${AWS::StackName}-web"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+  WebAlias:
+    Type: "AWS::KMS::Alias"
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-web"
+      TargetKeyId: !Ref Web
+
+  RdsDatabase:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      Enabled: true
+      KeyPolicy:
+        Id: !Sub "${AWS::StackName}-rds-db"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+
+  RdsDatabaseAlias:
+    Type: "AWS::KMS::Alias"
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-db"
+      TargetKeyId: !Ref RdsDatabase
+
+  Bucket:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      Enabled: true
+      KeyPolicy:
+        Id: !Sub "${AWS::StackName}-s3"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                # - "arn:aws:iam::${AWS::AccountId}:user/aws-s3-coresite-user"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                # TODO Create this user
+                # - "arn:aws:iam::${AWS::AccountId}:user/aws-s3-coresite-user"
+                - Fn::ImportValue: !Sub "efd-${Environment}-role-${AWS::Region}-ec2-assume-arn"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                # - "arn:aws:iam::${AWS::AccountId}:user/aws-s3-coresite-user"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+
+  BucketAlias:
+    Type: "AWS::KMS::Alias"
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-s3"
+      TargetKeyId: !Ref Bucket
+
+  MimixInput:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      Enabled: true
+      KeyPolicy:
+        Id: !Sub "${AWS::StackName}-MimixInput-s3"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                # - "arn:aws:iam::${AWS::AccountId}:user/aws-s3-coresite-user"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                # TODO Create this user
+                # - "arn:aws:iam::${AWS::AccountId}:user/aws-s3-coresite-user"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                # - "arn:aws:iam::${AWS::AccountId}:user/aws-s3-coresite-user"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+
+  MimixInputAlias:
+    Type: "AWS::KMS::Alias"
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-MimixInput-s3"
+      TargetKeyId: !Ref MimixInput
+  Rendition:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      Enabled: true
+      KeyPolicy:
+        Id: !Sub "${AWS::StackName}-Rendition-s3"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                # - "arn:aws:iam::${AWS::AccountId}:user/aws-s3-coresite-user"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of the key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                # TODO Create this user
+                # - "arn:aws:iam::${AWS::AccountId}:user/aws-s3-coresite-user"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                # - "arn:aws:iam::${AWS::AccountId}:user/aws-s3-coresite-user"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+
+  RenditionAlias:
+    Type: "AWS::KMS::Alias"
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-Rendition-s3"
+      TargetKeyId: !Ref Rendition
+Outputs:
+  SqsAlias:
+    Description: "efd sqs kms alias"
+    Value: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${SqsAlias}"
+    Export:
+      # efd-dev-kms-sqs-alias
+      Name: !Sub "${AWS::StackName}-sqs-alias"
+
+  BucketAlias:
+    Description: "efd s3 kms alias"
+    Value: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${BucketAlias}"
+    Export:
+      # efd-dev-kms-s3-alias
+      Name: !Sub "${AWS::StackName}-s3-alias"
+
+  BucketAliasMimix:
+    Description: "efd s3-MimixInput kms alias"
+    Value: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${MimixInputAlias}"
+    Export:
+      # efd-dev-kms-MimixInput-s3-alias
+      Name: !Sub "${AWS::StackName}-MimixInput-s3-alias"
+  
+  BucketAliasRendition:
+    Description: "efd s3-Rendition kms alias"
+    Value: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${RenditionAlias}"
+    Export:
+      # efd-dev-kms-Rendition-s3-alias
+      Name: !Sub "${AWS::StackName}-Rendition-s3-alias"
+
+  RdsDatabaseAlias:
+    Description: "efd rds db kms alias"
+    Value: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${RdsDatabaseAlias}"
+    Export:
+      # efd-dev-kms-rds-db-alias
+      Name: !Sub "${AWS::StackName}-rds-db-alias"
+
+  WebAlias:
+    Description: "efd web kms alias"
+    Value: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${WebAlias}"
+    Export:
+      # efd-dev-kms-web-alias
+      Name: !Sub "${AWS::StackName}-web-alias"

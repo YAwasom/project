@@ -1,0 +1,226 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "Blitline Sandbox Ecs Cluster"
+
+Parameters:
+  ProjectName:
+    Type: String
+
+  DockerTag:
+    Description: Blitline Sandbox docker tag
+    Type: String
+    Default: latest
+
+  EcrAccount:
+    Description: ECR Account Number
+    Type: String
+
+  IamStack:
+    Description: Iam Stack
+    Type: String
+
+  SubProject:
+    Type: String
+    Description: SubProject Name
+    Default: sandbox-ctrl
+
+  SandboxControllerImage:
+    Type: String
+    Description: Sandbox Controller Image Name
+    Default: blitline-sandbox-controller
+
+  OfficeImage:
+    Type: String
+    Description: Headless office image name
+    Default: blitline-office-headless
+
+  SandboxImage:
+    Type: String
+    Description: Sandbox Image
+    Default: blitline-sandbox
+
+  Environment:
+    Type: String
+    Description: Environment (dev|stg etc)
+
+  EcrRegion:
+    Type: String
+    Description: ecr region in which images are present
+    Default: us-west-2
+
+  MicroservicesEndpoint:
+    Type: String
+
+  Ec2Stack:
+    Description: EC2 Stack Name
+    Type: String
+
+  AllqClientImage:
+    Type: String
+
+
+Resources:
+  EcsCloudwatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/ecs/${ProjectName}-${Environment}-${SubProject}-logs"
+      RetentionInDays: 14
+
+  GenericOfficeTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ExecutionRoleArn:
+        Fn::ImportValue : !Sub "${IamStack}-ExecutionRoleArn"
+      TaskRoleArn:
+        Fn::ImportValue: !Sub "${IamStack}-TaskRoleArn"
+      Family: !Sub '${ProjectName}-${Environment}-generic-office-task-family'
+      NetworkMode: bridge
+      RequiresCompatibilities:
+        - EC2
+      ContainerDefinitions:
+        - Name: !Sub '${ProjectName}-${Environment}-generic-office-container'
+          Memory: 1024
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group         : !Ref EcsCloudwatchLogGroup
+              awslogs-region        : !Sub "${AWS::Region}"
+              awslogs-stream-prefix : !Sub '${ProjectName}-${Environment}-generic-office'
+          Image: !Sub "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/${OfficeImage}"
+          Command:
+            - sh
+            - "/tmp/run.sh"
+
+
+  EcsSandboxTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ExecutionRoleArn:
+        Fn::ImportValue : !Sub "${IamStack}-ExecutionRoleArn"
+      TaskRoleArn:
+        Fn::ImportValue: !Sub "${IamStack}-TaskRoleArn"
+      Family: !Sub '${ProjectName}-${Environment}-generic-sandbox-task-family'
+      NetworkMode: bridge
+      RequiresCompatibilities:
+        - EC2
+      ContainerDefinitions:
+        - Name: !Sub '${ProjectName}-${Environment}-generic-sandbox-container'
+          Memory: 1024
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group         : !Ref EcsCloudwatchLogGroup
+              awslogs-region        : !Sub "${AWS::Region}"
+              awslogs-stream-prefix : !Sub '${ProjectName}-${Environment}-generic-sandbox'
+          Image: !Sub "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/${SandboxImage}"
+          Command:
+            - sh
+            - "/tmp/run.sh"
+        - Name: !Sub '${ProjectName}-${Environment}-generic-office-container'
+          Memory: 1024
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group         : !Ref EcsCloudwatchLogGroup
+              awslogs-region        : !Sub "${AWS::Region}"
+              awslogs-stream-prefix : !Sub '${ProjectName}-${Environment}-generic-office'
+          Image: !Sub "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/${SandboxImage}"
+          Command:
+            - sh
+            - "/tmp/run.sh"
+
+  BlitlineSandboxTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ExecutionRoleArn:
+        Fn::ImportValue : !Sub "${IamStack}-ExecutionRoleArn"
+      TaskRoleArn:
+        Fn::ImportValue: !Sub "${IamStack}-TaskRoleArn"
+      Family: !Sub '${ProjectName}-${Environment}-${SubProject}-task-family'
+      NetworkMode: bridge
+      RequiresCompatibilities:
+        - EC2
+      ContainerDefinitions:
+        - Name: !Sub '${ProjectName}-${Environment}-${SubProject}-container'
+          Image: !Sub "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/${SandboxControllerImage}"
+          Memory: 1024
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group         : !Ref EcsCloudwatchLogGroup
+              awslogs-region        : !Sub "${AWS::Region}"
+              awslogs-stream-prefix : !Sub '${ProjectName}-${Environment}-${SubProject}'
+          Command:
+            - sh
+            - "./start.sh"
+          Environment:
+            - Name  : ECS_CLUSTER
+              Value :
+                Fn::ImportValue: !Sub "${Ec2Stack}-EcsCluster"
+            - Name  : ECS_CONTAINER_NAME
+              Value : !Sub '${ProjectName}-${Environment}-generic-office-container'
+            - Name: ALLQ_DEFAULT_US_URL
+              Value: allq_client:8090
+            - Name  : ECS_OFFICE_TASK_ARN
+              Value : !Ref GenericOfficeTask
+            - Name  : CEDIS_SERVERS
+              Value : !Ref MicroservicesEndpoint
+            - Name  : POSTBACK_URL
+              Value : "http://blit.line"
+            - Name  : CEDIS_PASSWORD
+              Value : jj6GZ
+            - Name  : SKIP_EU
+              Value : 'yes'
+            - Name  : ECS_SANDBOX_TASK_ARN
+              Value : !Ref EcsSandboxTask
+            - Name  : ECS_REGION
+              Value : !Sub "${AWS::Region}"
+          WorkingDirectory: "/docker_queue/lib"
+          Links:
+            - allq_client:allq_client
+        - Name: allq_client
+          Image: !Sub "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/${AllqClientImage}:latest"
+          Memory: 128
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref EcsCloudwatchLogGroup
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: !Sub '${ProjectName}-${Environment}-sandbox-allq-client'
+          PortMappings:
+            - HostPort: 8090
+              Protocol: tcp
+              ContainerPort: 8090
+          Environment:
+            - Name: A_CURVE_SECRETKEY
+              Value: clY8QXF1TkRBeXswa1c3cC4rSk1xZ3M0eCtVVCRCYVklWmh1e2phTgA
+            - Name: SERVER_STRING
+              Value: !Sub "${MicroservicesEndpoint}:7788"
+            - Name: A_CURVE_PUBLICKEY
+              Value: Vkx3RyN9cSR9VUpwKGk2NS85RTdVKmlqL3t4cjQ1eyF0UlF5MWtUTwA
+            - Name: A_CURVE_SERVER_PUBLICKEY
+              Value: Y3R4dC1RSnFCQzxBTVVabGk+bHlAJS16d3RAay5Jbng1PU12PndTPwA=
+            - Name: TCP_CLIENT_PORT
+              Value: 7768
+            - Name: ALLQ_DEBUG
+              Value: true
+
+  BlitlineSandboxServicesEcsService:
+    Type: AWS::ECS::Service
+    Properties:
+      #TimeoutInMinutes : 10
+      ServiceName: !Sub "${ProjectName}-${Environment}-${SubProject}-services"
+      TaskDefinition: !Ref BlitlineSandboxTaskDefinition
+      Cluster:
+        Fn::ImportValue: !Sub "${Ec2Stack}-EcsCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 100
+        MinimumHealthyPercent: 0
+      EnableECSManagedTags: false
+      LoadBalancers: []
+      PlacementStrategies: []
+      SchedulingStrategy: DAEMON
+      ServiceRegistries: []
+
+
+

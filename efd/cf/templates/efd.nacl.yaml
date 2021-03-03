@@ -1,0 +1,320 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: efd nacl
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+  VpcCidr:
+    Description: An environment name that will be appended to resource names
+    Type: String
+
+Resources:
+  NetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-id"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}"
+
+### NACL associated with private subnet
+  NetworkAclInboundPrv100:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "100"
+      PortRange:
+        From: "443"
+        To: "443"
+      NetworkAclId:
+        Ref: NetworkAcl
+  NetworkAclInboundPrv110:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "110"
+      PortRange:
+        From: "1024"
+        To: "65535"
+      NetworkAclId:
+        Ref: NetworkAcl
+  NetworkAclInboundPrv120:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "120"
+      PortRange:
+        From: "21"
+        To: "21"
+      NetworkAclId:
+        Ref: NetworkAcl
+  NetworkAclInboundPrv130:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "130"
+      PortRange:
+        From: "80"
+        To: "80"
+      NetworkAclId:
+        Ref: NetworkAcl
+  NetworkAclOutboundPrv110:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: "true"
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "110"
+      PortRange:
+        From: "80"
+        To: "80"
+      NetworkAclId:
+        Ref: NetworkAcl
+  NetworkAclOutboundPrv120:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: "true"
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "120"
+      PortRange:
+        From: "443"
+        To: "443"
+      NetworkAclId:
+        Ref: NetworkAcl
+  NetworkAclOutboundPrv130:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: "true"
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "130"
+      PortRange:
+        From: "1024"
+        To: "65535"
+      NetworkAclId:
+        Ref: NetworkAcl
+  NetworkAclOutboundPrv140:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 69.28.151.107/32
+      Egress: "true"
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "140"
+      PortRange:
+        From: "21"
+        To: "21"
+      NetworkAclId:
+        Ref: NetworkAcl
+  NetworkAclOutboundPrv150:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 208.111.149.105/32
+      Egress: "true"
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "150"
+      PortRange:
+        From: "21"
+        To: "21"
+      NetworkAclId:
+        Ref: NetworkAcl
+  NetworkAclOutboundPrv160:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 208.111.149.109/32
+      Egress: "true"
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "160"
+      PortRange:
+        From: "21"
+        To: "21"
+      NetworkAclId:
+        Ref: NetworkAcl
+##NACL attached to public subnet
+  NetworkPublicAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-id"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-pub"
+
+  NetworkAclInboundPub100:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "140"
+      PortRange:
+        From: "1024"
+        To: "65535"
+      NetworkAclId:
+        Ref: NetworkPublicAcl
+
+  NetworkAclInboundPub141:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "141"
+      PortRange:
+        From: "80"
+        To: "80"
+      NetworkAclId:
+        Ref: NetworkPublicAcl
+
+  NetworkAclInboundPub143:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "143"
+      PortRange:
+        From: "443"
+        To: "443"
+      NetworkAclId:
+        Ref: NetworkPublicAcl
+  NetworkAclInboundPub144:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "144"
+      PortRange:
+        From: "21"
+        To: "21"
+      NetworkAclId:
+        Ref: NetworkPublicAcl
+  NetworkAclOutboundPub100:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: "true"
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "110"
+      PortRange:
+        From: "80"
+        To: "80"
+      NetworkAclId:
+        Ref: NetworkPublicAcl
+  NetworkAclOutboundPub120:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: "true"
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "120"
+      PortRange:
+        From: "443"
+        To: "443"
+      NetworkAclId:
+        Ref: NetworkPublicAcl
+  NetworkAclOutboundPub130:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: "true"
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "130"
+      PortRange:
+        From: "1024"
+        To: "65535"
+      NetworkAclId:
+        Ref: NetworkPublicAcl
+  NetworkAclOutboundPub140:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 69.28.151.107/32
+      Egress: "true"
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "140"
+      PortRange:
+        From: "21"
+        To: "21"
+      NetworkAclId:
+        Ref: NetworkPublicAcl
+  NetworkAclOutboundPub150:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 208.111.149.105/32
+      Egress: "true"
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "150"
+      PortRange:
+        From: "21"
+        To: "21"
+      NetworkAclId:
+        Ref: NetworkPublicAcl
+  NetworkAclOutboundPub160:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: 208.111.149.109/32
+      Egress: "true"
+      Protocol: "6"
+      RuleAction: allow
+      RuleNumber: "160"
+      PortRange:
+        From: "21"
+        To: "21"
+      NetworkAclId:
+        Ref: NetworkPublicAcl
+  PublicSubnetNetworkAclAssociationA:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref "NetworkPublicAcl"
+      SubnetId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-public-subnet-a"
+
+
+  SubnetNetworkAclAssociation1:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref "NetworkAcl"
+      SubnetId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-1-2A"
+
+  SubnetNetworkAclAssociation2:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref "NetworkAcl"
+      SubnetId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-2-2B"
+
+  SubnetNetworkAclAssociation3:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref "NetworkAcl"
+      SubnetId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-3-2C"

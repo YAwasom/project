@@ -1,0 +1,78 @@
+---
+- isMultiBranch: false
+  projectName: retailer-metadata-ecs-cf-dev
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: retailer metadata ecs cloudformation dev
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Retailer Metadata
+  viewRegex: ((.*)(retailer-metadata)(.*))
+  scriptPath: retailer-metadata/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: retailer-metadata-ecs-cf-qa
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: retailer metadata ecs cloudformation qa
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Retailer Metadata
+  viewRegex: ((.*)(retailer-metadata)(.*))
+  scriptPath: retailer-metadata/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: retailer-metadata-ecs-cf-prod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: retailer metadata ecs cloudformation prod
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Retailer Metadata
+  viewRegex: ((.*)(retailer-metadata)(.*))
+  scriptPath: retailer-metadata/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: retailer-metadata-role-cf-dev
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: retailer metadata role cloudformation dev
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Retailer Metadata
+  viewRegex: ((.*)(retailer-metadata)(.*))
+  scriptPath: retailer-metadata/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: retailer-metadata-role-cf-qa
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: retailer metadata role cloudformation qa
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Retailer Metadata
+  viewRegex: ((.*)(retailer-metadata)(.*))
+  scriptPath: retailer-metadata/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: retailer-metadata-role-cf-prod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: retailer metadata role cloudformation prod
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Retailer Metadata
+  viewRegex: ((.*)(retailer-metadata)(.*))
+  scriptPath: retailer-metadata/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true

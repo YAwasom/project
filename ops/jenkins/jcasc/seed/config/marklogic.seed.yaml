@@ -1,0 +1,35 @@
+---
+- isMultiBranch: false
+  projectName: marklogic-packer-builder
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: build base ami for marklogic
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: MarkLogic
+  viewRegex: ((.*)marklogic(.*))
+  scriptPath: marklogic/packer/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: true
+  projectName: marklogic-autofeed-delivery-service
+  url: git@github.com:wm-msc-malt/marklogic-autofeed-delivery-service.git
+  description: MarkLogic Autofeed Delivery service
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: MarkLogic
+  viewRegex: ((.*)marklogic(.*))
+  scmScanInterval: "5m"
+  scriptPath: Jenkinsfile
+  includes: develop master qa stage
+
+- isMultiBranch: true
+  projectName: marklogic-atom-etl-nodejs
+  url: git@github.com:wm-msc-malt/atom-etl-nodejs.git
+  description: atom nodejs to pull data from database server
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: MarkLogic
+  viewRegex: ((.*)marklogic(.*))
+  scmScanInterval: "5m"
+  scriptPath: Jenkinsfile
+  includes: develop master qa stage

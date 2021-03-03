@@ -1,0 +1,255 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: ops jenkins kms keys
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: "String"
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+Resources:
+  JenkinsConfigurationS3KmsKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: kms key jenkins configurations s3 bucket
+      EnableKeyRotation: true
+      KeyPolicy:
+        Id: !Sub "${AWS::StackName}-s3-configuration"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of this key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+      Tags:
+        - Key: "Name"
+          # wb-cmd-ops-kms-jenkins-s3-configuration
+          Value: !Sub "${AWS::StackName}-s3-configuration"
+
+  JenkinsConfigurationS3KmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-s3-configuration"
+      TargetKeyId: !Ref JenkinsConfigurationS3KmsKey
+
+  JenkinsEfsKmsKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: kms key jenkins efs
+      EnableKeyRotation: true
+      KeyPolicy:
+        Id: !Sub "${AWS::StackName}-efs"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of this key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+      Tags:
+        - Key: "Name"
+          # wb-cmd-ops-kms-jenkins-efs
+          Value: !Sub "${AWS::StackName}-efs"
+
+  JenkinsEfsKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-efs"
+      TargetKeyId: !Ref JenkinsEfsKmsKey
+
+  JenkinsEbsKmsKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: kms key jenkins ebs volume
+      EnableKeyRotation: true
+      KeyPolicy:
+        Id: !Sub "${AWS::StackName}-ebs"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of this key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+      Tags:
+        - Key: "Name"
+          # wb-cmd-ops-kms-jenkins-ebs
+          Value: !Sub "${AWS::StackName}-ebs"
+
+  JenkinsEbsKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-ebs"
+      TargetKeyId: !Ref JenkinsEbsKmsKey
+
+Outputs:
+  JenkinsOpsKmsKeyAlias:
+    Description: "ops jenkins configuration s3 kms alias"
+    Value: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${JenkinsConfigurationS3KmsKeyAlias}"
+    Export:
+      # wb-cmd-ops-kms-jenkins-s3-configuration-alias
+      Name: !Sub "${AWS::StackName}-s3-configuration-alias"
+
+  JenkinsEfsKmsKeyAlias:
+    Description: "ops jenkins efs kms alias"
+    Value: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${JenkinsEfsKmsKeyAlias}"
+    Export:
+      # wb-cmd-ops-kms-jenkins-efs-alias
+      Name: !Sub "${AWS::StackName}-efs-alias"  
+    
+  JenkinsEbsKmsKeyAlias:
+    Description: "ops jenkins ebs kms alias"
+    Value: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${JenkinsEbsKmsKeyAlias}"
+    Export:
+      # wb-cmd-ops-kms-jenkins-ebs-alias
+      Name: !Sub "${AWS::StackName}-ebs-alias"

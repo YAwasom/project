@@ -1,0 +1,591 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ops jenkins on ecs with elb
+Parameters:
+  Environment:
+    Description: The environment in which Jenkins is deployed
+    Type: String
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+  WbNetworkCidr:
+    Description: Warner Bros corp network cidr to whitelist
+    Type: String
+    Default: 168.161.192.0/21
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  WbNetworkWestCoastCidr:
+    Description: CIDR of Internal WB Network West Coast
+    Type: String
+    Default: 168.161.18.0/21
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  WbNetworkEastCoastCidr:
+    Description: CIDR of Internal WB Network East Coast
+    Type: String
+    Default: 168.161.22.0/21
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  WbNetworkLondonCidr:
+    Description: CIDR of Internal WB Network London
+    Type: String
+    Default: 168.161.200.0/21
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  # EC2
+  # t2.xlarge	4 vCPU	GiB  16	EBS-Only	Moderate Network
+  # t2.2xlarge 8 vCPU	GiB  32	EBS-Only	Moderate Network
+  InstanceType:
+    Description: EC2 instance type for ecs, please avoid nitro based systems for now
+    Type: String
+    Default: t2.2xlarge
+    AllowedValues:
+      - t2.xlarge
+      - t2.2xlarge
+    ConstraintDescription: Must be a valid EC2 instance type.
+
+  # JENKINS
+  JenkinsDNSName:
+    Description: Jenkins Alias for the ELB.
+    Type: String
+    Default: jenkins.cmd-ops.warnerbros.com
+
+  JenkinsSlavePort:
+    Description: Port used by Jenkins slaves
+    Type: String
+    MinLength: 4
+    MaxLength: 6
+    Default: "50000"
+
+  # EBS & EFS
+  EFSMountPoint:
+    Description: The Linux mount point for the EFS volume
+    Type: String
+    MinLength: 5
+    MaxLength: 20
+    Default: jenkins-home-efs
+
+  EBSBlockDeviceName:
+    Description: EBS block device for auto scale group
+    Type: String
+    MinLength: 5
+    MaxLength: 15
+    Default: /dev/xvdcz
+
+  EcsOptimizedAmi:
+    # e.g. public image amzn2-ami-ecs-hvm-2.0.20190301-x86_64-ebs
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /ops/ami/recommended/ecs
+
+Resources:
+  JenkinsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "SecurityGroup for Jenkins instances: master and slaves"
+      VpcId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-id"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref "JenkinsELBSecurityGroup"
+          Description: "Allow traffic the jenkins elb"
+        - IpProtocol: tcp
+          FromPort: !Sub ${JenkinsSlavePort}
+          ToPort: !Sub ${JenkinsSlavePort}
+          SourceSecurityGroupId: !Ref "JenkinsELBSecurityGroup"
+          Description: "Allow traffic the jenkins elb"
+
+  JenkinsELBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SecurityGroup for Jenkins ELB
+      VpcId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-id"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          Description: "Allow traffic from wb network"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref WbNetworkCidr       
+        - IpProtocol: tcp
+          Description: "Allow traffic from wb network west coast"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref WbNetworkWestCoastCidr    
+        - IpProtocol: tcp
+          Description: "Allow traffic from wb network east coast"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref WbNetworkEastCoastCidr   
+        - IpProtocol: tcp
+          Description: "Allow traffic from wb network london"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref WbNetworkLondonCidr
+        - IpProtocol: tcp
+          Description: "Allow traffic from jenkins slaves via NAT"
+          FromPort: 443
+          ToPort: 443
+          CidrIp:
+            Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-nat-a-ip"
+        - IpProtocol: tcp
+          Description: "Allow traffic from jenkins slaves via NAT"
+          FromPort: 443
+          ToPort: 443
+          CidrIp:
+            Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-nat-b-ip"
+        - IpProtocol: tcp
+          Description: "Allow traffic from jenkins slaves via NAT"
+          FromPort: 443
+          ToPort: 443
+          CidrIp:
+            Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-nat-c-ip"
+        - IpProtocol: tcp
+          Description: "Allow traffic from jenkins slaves via NAT"
+          FromPort: !Sub ${JenkinsSlavePort}
+          ToPort: !Sub ${JenkinsSlavePort}
+          CidrIp:
+            Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-nat-a-ip"
+        - IpProtocol: tcp
+          Description: "Allow traffic from jenkins slaves via NAT"
+          FromPort: !Sub ${JenkinsSlavePort}
+          ToPort: !Sub ${JenkinsSlavePort}
+          CidrIp:
+            Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-nat-b-ip"
+        - IpProtocol: tcp
+          Description: "Allow traffic from jenkins slaves via NAT"
+          FromPort: !Sub ${JenkinsSlavePort}
+          ToPort: !Sub ${JenkinsSlavePort}
+          CidrIp:
+            Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-nat-c-ip"
+
+  EFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for EFS mount target
+      VpcId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-id"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 2049
+          ToPort: 2049
+          # TODO FIX THIS
+          CidrIp: "10.255.0.0/16"
+
+  JenkinsEFS:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      PerformanceMode: generalPurpose
+      ThroughputMode: provisioned
+      ProvisionedThroughputInMibps: 50
+      LifecyclePolicies:
+        - TransitionToIA: AFTER_7_DAYS
+      Encrypted: true
+      KmsKeyId: !Sub "alias/wb-cmd-${Environment}-kms-jenkins-efs"
+      FileSystemTags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-master-efs"
+
+  MountTargetA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref JenkinsEFS
+      SubnetId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-private-subnet-a"
+      SecurityGroups:
+        - !Ref "EFSSecurityGroup"
+
+  MountTargetB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref "JenkinsEFS"
+      SubnetId:
+        Fn::ImportValue:
+          !Sub "wb-cmd-${Environment}-vpc-private-subnet-b"
+      SecurityGroups:
+        - !Ref "EFSSecurityGroup"
+
+  JenkinsELB:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      LoadBalancerName: !Sub "${AWS::StackName}-elb"
+      Scheme: internet-facing
+      Subnets:
+        - Fn::ImportValue:
+            !Sub "wb-cmd-${Environment}-vpc-public-subnet-a"
+        - Fn::ImportValue:
+            !Sub "wb-cmd-${Environment}-vpc-public-subnet-b"
+      SecurityGroups:
+        - !Ref 'JenkinsELBSecurityGroup'
+      Listeners:
+        - InstancePort: '8080'
+          InstanceProtocol: "HTTP"
+          LoadBalancerPort: '443'
+          Protocol: "HTTPS"
+          SSLCertificateId:  !Sub "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/9bea221f-b846-4042-aaa5-c616f2e15c67"
+          PolicyNames:
+            - JenkinsELBStickiness
+        - InstancePort: !Sub ${JenkinsSlavePort}
+          InstanceProtocol: TCP
+          LoadBalancerPort: !Sub ${JenkinsSlavePort}
+          Protocol: TCP
+      LBCookieStickinessPolicy:
+        - CookieExpirationPeriod: "3600"
+          PolicyName: JenkinsELBStickiness
+      ConnectionDrainingPolicy:
+        Enabled: true
+        Timeout: 120
+      ConnectionSettings:
+        IdleTimeout: 300
+      HealthCheck:
+        HealthyThreshold: "5"
+        Interval: "60"
+        Target: HTTP:8080/login
+        Timeout: "3"
+        UnhealthyThreshold: "10"
+
+  JenkinsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${AWS::StackName}-cluster"
+
+  JenkinsCloudwatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${AWS::StackName}-master-log"
+      RetentionInDays: 7
+
+  JenkinsMasterTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub "${AWS::StackName}-master"
+      NetworkMode: bridge
+      Volumes:
+        - Host:
+            SourcePath: !Sub "/${EFSMountPoint}"
+          Name: !Sub "master-${EFSMountPoint}"
+        - Host:
+            SourcePath: /var/run/docker.sock
+          Name: docker
+      ContainerDefinitions:
+        - Name: !Sub "${AWS::StackName}-master"
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/cmd/jenkins"
+          MountPoints:
+            - SourceVolume: !Sub "master-${EFSMountPoint}"
+              ContainerPath: /var/jenkins_home
+            - SourceVolume: docker
+              ContainerPath: /var/run/docker.sock
+          Essential: true
+          Cpu: 4096
+          Memory: 8192
+          MemoryReservation: 4096
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref "JenkinsCloudwatchLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: !Sub "${AWS::StackName}-master-log"
+          PortMappings:
+            - HostPort: 8080
+              ContainerPort: 8080
+              Protocol: tcp
+            - HostPort: !Sub ${JenkinsSlavePort}
+              ContainerPort: !Sub ${JenkinsSlavePort}
+              Protocol: tcp
+          Environment:
+            - Name: JENKINS_HOST_URL
+              Value: !Sub "https://${JenkinsDNSName}"
+            - Name: JENKINS_TUNNEL_URL
+              Value: !Sub "${JenkinsDNSName}"
+            - Name: JENKINS_SLAVE_PORT
+              Value: !Sub "${JenkinsSlavePort}"
+            - Name: AWS_REGION
+              Value: !Ref "AWS::Region"
+            - Name: AWS_ACCOUNT_ID
+              Value: !Ref "AWS::AccountId"
+            - Name: AWS_JENKINS_ENVIRONMENT
+              Value: !Sub "${Environment}"
+
+  JenkinsECSService:
+    DependsOn: JenkinsELB
+    Type: AWS::ECS::Service
+    Properties:
+      DesiredCount: 1
+      Cluster: !Sub '${AWS::StackName}-cluster'
+      ServiceName: !Sub '${AWS::StackName}-master'
+      TaskDefinition: !Ref 'JenkinsMasterTaskDefinition'
+      Role:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-role-jenkins-${AWS::Region}-service"
+      LoadBalancers:
+        - LoadBalancerName: !Sub "${AWS::StackName}-elb"
+          ContainerPort: 8080
+          ContainerName: !Sub '${AWS::StackName}-master'
+
+  JenkinsECSLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            AssociatePublicIpAddress: false
+            SubnetId:
+              Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-private-subnet-a"
+            Groups:
+              - !Ref "JenkinsSecurityGroup"
+        IamInstanceProfile:
+          Arn:
+            Fn::ImportValue: !Sub "wb-cmd-${Environment}-role-jenkins-${AWS::Region}-instance-profile"
+        InstanceType: !Ref "InstanceType"
+        ImageId: !Ref EcsOptimizedAmi
+        KeyName: "wb-cmd-ops-jenkins" 
+        BlockDeviceMappings:
+          - DeviceName: !Sub ${EBSBlockDeviceName}
+            Ebs:
+              Encrypted: true
+              VolumeSize: 100
+              VolumeType: gp2
+              DeleteOnTermination: true
+              KmsKeyId: !Sub "alias/wb-cmd-${Environment}-kms-jenkins-ebs"
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash -e
+            # Debug logging for userdata
+            # Logs can be found at /var/log/user-data.log
+            exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+            # Configure ecs cluster
+            cat <<'EOF' >> /etc/ecs/ecs.config
+            #!/bin/bash
+            ECS_CLUSTER=${AWS::StackName}-cluster
+            ECS_IMAGE_MINIMUM_CLEANUP_AGE=10m
+            ECS_ENGINE_TASK_CLEANUP_WAIT_DURATION=30m
+            ECS_NUM_IMAGES_DELETE_PER_CYCLE=100
+            EOF
+
+            instance_id=$(ec2-metadata -i | cut -d " " -f 2)
+            ec2_hostname="${AWS::StackName}"
+            hostnamectl set-hostname $ec2_hostname-$instance_id
+
+            # Stop docker & ecs agent before mounting to /var/lib/docker
+            service docker stop
+
+            # Setup for legacy docker-storage-setup
+            # Mount /var/lib/docker onto the ebs volume ${EBSBlockDeviceName}
+            cat >/etc/sysconfig/docker-storage-setup <<EOL
+            # Edit this file to override any configuration options specified in
+            # /usr/lib/docker-storage-setup/docker-storage-setup.
+            # For more details refer to "man docker-storage-setup"
+            STORAGE_DRIVER="overlay2"
+            DEVS=${EBSBlockDeviceName}
+            VG="docker-vg"
+            DATA_SIZE=80%FREE
+            AUTO_EXTEND_POOL=yes
+            LV_ERROR_WHEN_FULL=yes
+            CONTAINER_ROOT_LV_NAME="docker-root-lv"
+            CONTAINER_ROOT_LV_SIZE="100%FREE"
+            CONTAINER_ROOT_LV_MOUNT_PATH="/var/lib/docker"
+            EOL
+
+            # Install tools for mounting ebs & efs
+            # https://docs.aws.amazon.com/efs/latest/ug/using-amazon-efs-utils.html
+            # https://www.sourceware.org/lvm2/
+            yum install -y amazon-efs-utils lvm2 telnet jq aws-cli aws-cfn-bootstrap
+
+            # Install bootstrap, logs, and ssm agent
+            yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+            rpm -Uvh https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+
+            # Configure docker via container-storage-setup
+            cd /usr/local/src/
+            curl -OL https://github.com/projectatomic/container-storage-setup/archive/v0.6.0.tar.gz
+            mv v0.6.0.tar.gz container-storage-setup-0.6.0.tar.gz
+            tar -xvf container-storage-setup-0.6.0.tar.gz
+            cd container-storage-setup-0.6.0 && make install
+            container-storage-setup
+
+            # Jenkins user on host
+            # https://github.com/aws/containers-roadmap/issues/351
+            # If you wanna use the shared maven cache.. /home/ec2-user/.m2 which hits the EBS volumes 
+            # jenkins user inside slave containers needs 1008 for group and user
+            groupadd -g 1008 jenkins
+            useradd -c "jenkins user" -d /home/ec2-user/.m2 -u 1008 -g 1008 -m jenkins
+            chown -R jenkins:jenkins /home/ec2-user/.m2
+
+            # Restart docker and ecs agent
+            systemctl daemon-reload
+            service docker start
+            /usr/libexec/amazon-ecs-init pre-start
+            /usr/libexec/amazon-ecs-init start &
+
+            # Mount EFS
+            # TODO Test mount after restart of master instance.
+            # Deletion will simply remount which already works.
+            mkdir -p /${EFSMountPoint}
+            sudo mount -t efs ${JenkinsEFS}:/ /${EFSMountPoint}
+            echo "${JenkinsEFS}:/ /${EFSMountPoint} efs tls,_netdev" >> /etc/fstab
+            sudo chown 1000 /${EFSMountPoint}
+
+            # Protect instances from scale in when >= 2 containers are running
+            # This accounts for the ecs task used to manage the service
+            echo "* * * * * /${EFSMountPoint}/shell/protect-ec2-from-scale-in.sh" | tee -a /var/spool/cron/root
+
+            # Terminate the instance once /var/lib/docker is at 85% and there are <= 2 containers running
+            # If we are on the master node and <= 1 container on a slave instance
+            echo "* * * * * /${EFSMountPoint}/shell/terminate-ec2-at-max-memory.sh" | tee -a /var/spool/cron/root          
+            
+            # Constantly sync casc configs to EFS
+            echo "* * * * * su ec2-user -c \"/${EFSMountPoint}/shell/sync-casc-configs.sh ${Environment} /${EFSMountPoint}/casc_configs/\" " | tee -a /var/spool/cron/root
+
+  JenkinsECSAutoScaling:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn: 
+      - MountTargetA
+      - MountTargetB
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: 0
+        MaxBatchSize: 1
+        PauseTime: "PT90S"
+        SuspendProcesses:
+          - HealthCheck
+          - ReplaceUnhealthy
+          - AZRebalance
+          - AlarmNotification
+          - ScheduledActions
+    Properties:
+      AutoScalingGroupName: !Sub "${AWS::StackName}-master-asg"
+      LaunchTemplate:
+        LaunchTemplateId: !Ref JenkinsECSLaunchTemplate
+        Version: !GetAtt JenkinsECSLaunchTemplate.LatestVersionNumber
+      MinSize: "4"
+      MaxSize: "8"
+      DesiredCapacity: "4"
+      HealthCheckType: EC2
+      HealthCheckGracePeriod: 400
+      LoadBalancerNames:
+        - !Ref "JenkinsELB"
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-private-subnet-a"
+        - Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-private-subnet-b"
+      AvailabilityZones:
+        - Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-az-a"
+        - Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-az-b"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-master"
+          PropagateAtLaunch: true
+
+  JenkinsClusterScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref "JenkinsECSAutoScaling"
+      EstimatedInstanceWarmup: 120
+      MetricAggregationType: Average
+      PolicyType: StepScaling
+      StepAdjustments:
+        - MetricIntervalLowerBound: 0
+          ScalingAdjustment: 2
+
+  JenkinsClusterScaleUpAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: CPU utilization avg at 80% during the last 3 minutes
+      AlarmName: JenkinsClusterScaleUpAlarm
+      AlarmActions:
+        - !Ref "JenkinsClusterScaleUpPolicy"
+      Dimensions:
+        - Name: ClusterName
+          Value: !Sub "${AWS::StackName}-cluster"
+      MetricName: CPUReservation
+      Namespace: AWS/ECS
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Statistic: Average
+      Threshold: 80
+      Period: 60
+      EvaluationPeriods: 3
+      TreatMissingData: notBreaching
+
+  JenkinsClusterScaleDownPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: "PercentChangeInCapacity"
+      AutoScalingGroupName: !Ref "JenkinsECSAutoScaling"
+      Cooldown: "300"
+      ScalingAdjustment: -50
+
+  JenkinsClusterScaleDownAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription:
+        CPU utilization is under 50% for the last 5 min
+      AlarmName: JenkinsClusterScaleDownAlarm
+      AlarmActions:
+        - !Ref "JenkinsClusterScaleDownPolicy"
+      Dimensions:
+        - Name: ClusterName
+          Value: !Sub "${AWS::StackName}-cluster"
+      MetricName: CPUReservation
+      Namespace: AWS/ECS
+      ComparisonOperator: LessThanThreshold
+      Statistic: Maximum
+      Threshold: 50
+      Period: 60
+      EvaluationPeriods: 5
+      TreatMissingData: notBreaching
+
+  JenkinsEfsPercentIOLimit:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Alert if > 70% toward reaching the I/O limit
+      MetricName: PercentIOLimit
+      Namespace: AWS/EFS
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 70
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: FileSystemId
+        Value: !Ref JenkinsEFS
+      AlarmActions:
+        - Fn::ImportValue: !Sub "wb-cmd-${Environment}-sns-error-topic-arn"
+
+  JenkinsEfsPermittedThroughput:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Alert if > than provisioned throughput at 31mbs
+      MetricName: PermittedThroughput
+      Namespace: AWS/EFS
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 55000000
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+      - Name: FileSystemId
+        Value: !Ref JenkinsEFS
+      AlarmActions:
+        - Fn::ImportValue: !Sub "wb-cmd-${Environment}-sns-error-topic-arn"
+
+Outputs:
+  JenkinsElbDnsName:
+    Description: Jenkins ecs elb dns name
+    Value: !GetAtt "JenkinsELB.DNSName"
+    Export:
+      # wb-cmd-ops-ecs-jenkins-elb-dns-name
+      Name: !Sub "${AWS::StackName}-elb-dns-name"
+
+  JenkinsElbHostedZoneID:
+    Description: Jenkins ecs elb hosted zone id
+    Value: !GetAtt "JenkinsELB.CanonicalHostedZoneNameID"
+    Export:
+      # wb-cmd-ops-ecs-jenkins-elb-hosted-zone-id
+      Name: !Sub "${AWS::StackName}-elb-hosted-zone-id"

@@ -1,0 +1,9 @@
+
+VPCCidr: 10.50.48.0/20
+PublicSubnetCidrA: 10.50.48.1/26
+PublicSubnetCidrB: 10.50.48.64/26
+PublicSubnetCidrC: 10.50.48.128/26
+PrivateSubnetCidrA: 10.50.49.1/26
+PrivateSubnetCidrB: 10.50.49.64/26
+PrivateSubnetCidrC: 10.50.49.128/26
+VPCName: apialb-dev-vpc

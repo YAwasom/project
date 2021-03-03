@@ -1,0 +1,118 @@
+---
+- isMultiBranch: false
+  projectName: nuxeo-deploy-packer-base-image-builder
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: build base ami for nest deployments to stg and prod
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Deploy
+  viewRegex: ((.*)nuxeo-deploy(.*))
+  scriptPath: nest/packer/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: nuxeo-deploy-packer-release-image-builder
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: takes from base ami and builds release ami for nest deployments to stg and prod
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Deploy
+  viewRegex: ((.*)nuxeo-deploy(.*))
+  scriptPath: nest/packer/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: nuxeo-deploy-base
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: nest nuxeo base docker image
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Deploy
+  viewRegex: ((.*)nuxeo-deploy(.*))
+  scriptPath: nest/docker/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: nuxeo-deploy-docker-release-builder
+  url: git@github.com:wm-msc-malt/nest-env-config.git
+  branch: develop
+  description: nest nuxeo docker release builder
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Deploy
+  viewRegex: ((.*)nuxeo-deploy(.*))
+  scriptPath: dev-local/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: nuxeo-deploy-dev-emu
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: nest nuxeo deploy to dev emu
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Deploy
+  viewRegex: ((.*)nuxeo-deploy(.*))
+  scriptPath: nest/deployments/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: nuxeo-deploy-qa
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: nest nuxeo deploy to qa
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Deploy
+  viewRegex: ((.*)nuxeo-deploy(.*))
+  scriptPath: nest/deployments/Jenkinsfile
+  scmTrigger: ""
+  # GMT 7pm - 11pm - PDT 12pm - 4pm
+  cronTrigger: "H 19,23 * * *"
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: nuxeo-deploy-stg
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: nest nuxeo deploy to stg
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Deploy
+  viewRegex: ((.*)nuxeo-deploy(.*))
+  scriptPath: nest/deployments/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: nuxeo-deploy-prod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: nest nuxeo deploy to prod
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Deploy
+  viewRegex: ((.*)nuxeo-deploy(.*))
+  scriptPath: nest/deployments/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: nuxeo-deploy-prod2
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: nest nuxeo deploy to prod2
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Nuxeo Deploy
+  viewRegex: ((.*)nuxeo-deploy(.*))
+  scriptPath: nest/deployments/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true

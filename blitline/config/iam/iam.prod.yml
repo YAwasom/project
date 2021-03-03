@@ -1,0 +1,10 @@
+TempBucket                  : arn:aws:s3:::com-warnerbros-contentnow-prod-rendition-nuxeo
+TransientBucket             : arn:aws:s3:::com-warnerbros-contentnow-prod-transient-nuxeo
+SourceBucket                : arn:aws:s3:::contentnow-assets-mars-perm-prod
+LakesideBucket              : arn:aws:s3:::lakeside-prod-s3-us-west-2-nbcu
+LakesideBucketKey           : arn:aws:kms:us-west-2:507416135429:alias/lakeside-prod-kms-us-west-2-nbcu-alias
+ProjectName                 : blitline
+PeripheralsStack            : blitline-prod-peripherals
+Environment                 : prod
+ShortlifeSuffix            : '-shortlife'
+PrivateSuffix              : '-pvt'

@@ -1,0 +1,314 @@
+
+
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "Blitline Task Execution Role"
+
+Parameters:
+  ProjectName:
+    Type: String
+
+  TempBucket:
+    Description: Temp Bucket
+    Type: String
+
+  TransientBucket:
+    Description: Transient Bucket
+    Type: String
+
+  SourceBucket:
+    Description: Source Bucket
+    Type: String
+
+  LakesideBucket:
+    Description: Lakeside Bucket
+    Type: String
+
+  LakesideBucketKey:
+    Description: Lakeside Bucket Key
+    Type: String
+
+  PeripheralsStack:
+    Description: Peripherals Stack Name
+    Type: String
+
+  Environment:
+    Description: Environment
+    Type: String
+
+  ShortlifeSuffix:
+    Description: Shortlife Bucket Suffix
+    Type: String
+
+  PrivateSuffix :
+    Description: Private Bucket Suffix
+    Type: String
+
+Resources:
+  BlitlineEcsExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-ecs-execution-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ecs-tasks.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+      Policies:
+        - PolicyName: !Sub "${AWS::StackName}-ecs-ssm-kms"
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                  - ssm:GetParametersByPath
+                  - kms:Decrypt
+                Resource:
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/com/warnerbros/contentnow/blitline/${Environment}/*"
+                  - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key:alias/aws/ssm"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-ecs-execution"
+        - Key: Environment
+          Value: !Ref Environment
+
+  BlitlineEcsTaskRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-ecs-task-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "ecs-tasks.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+      Policies:
+        - PolicyName: ecr-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  [
+                    "ecr:DescribeImageScanFindings",
+                    "ecr:GetLifecyclePolicyPreview",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage",
+                    "ecr:DescribeImages",
+                    "ecr:DescribeRepositories",
+                    "ecr:ListTagsForResource",
+                    "ecr:ListImages",
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetLifecyclePolicy",
+                    "ecr:GetRepositoryPolicy",
+                  ]
+                Resource: "arn:aws:ecr:*:348180535083:repository/*"
+        - PolicyName: DownloadLakeside
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: [
+                  "s3:GetObject"
+                ]
+                Resource:
+                  [
+                  !Sub '${LakesideBucket}/*'
+                  ]
+              - Effect: Allow
+                Action: [
+                  "kms:Decrypt"
+                ]
+                Resource:
+                  [
+                  !Sub '${LakesideBucketKey}'
+                  ]
+        - PolicyName: BlitlinePolicy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: [ "s3:ListBucket", "s3:GetBucketLocation", "s3:ListBucketMultipartUploads" ]
+                Resource:
+                  [
+                    !Sub '${TempBucket}',
+                    !Sub '${SourceBucket}${ShortlifeSuffix}${PrivateSuffix}',
+                    !Sub '${SourceBucket}${ShortlifeSuffix}'
+                  ]
+              - Effect: Allow
+                Action:
+                  [
+                    "s3:PutObject",
+                    "s3:GetObject",
+                    "s3:AbortMultipartUpload",
+                    "s3:DeleteObject",
+                    "s3:ListMultipartUploadParts",
+                    "s3:ListObject"
+                  ]
+                Resource:
+                  [
+                    !Sub '${TempBucket}/*',
+                    !Sub '${TransientBucket}/*',
+                    !Sub '${SourceBucket}/*',
+                    !Sub '${SourceBucket}${ShortlifeSuffix}${PrivateSuffix}/*',
+                    !Sub '${SourceBucket}${ShortlifeSuffix}${PrivateSuffix}/*',
+                    !Sub '${SourceBucket}${ShortlifeSuffix}/*'
+                  ]
+              -
+                Sid: KinesisPutActions
+                Effect: Allow
+                Action:
+                  - kinesis:PutRecord
+                  - kinesis:PutRecords
+                Resource: {'Fn::ImportValue': !Sub '${PeripheralsStack}-KinesisStreamArn'}
+              -
+                Sid: ElasticTranscoderAccess
+                Effect: Allow
+                Action:
+                  - elastictranscoder:*
+                  - s3:ListAllMyBuckets
+                  - s3:ListBucket
+                  - iam:ListRoles
+                  - sns:ListTopics
+                Resource: "*"
+              -
+                Sid: ElasticTranscoderPassRoleAccess
+                Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: "*"
+                Condition:
+                  StringLike:
+                    iam:PassedToService:
+                    - elastictranscoder.amazonaws.com
+              -
+                Sid: TaskRunAccess
+                Effect: Allow
+                Action:
+                  - ecs:DescribeTasks
+                  - ecs:ListTasts
+                  - ecs:StartTask
+                  - ecs:RunTask
+                Resource: "*"
+              -
+                Sid: TaskExecutionPassRoleAccess
+                Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource: !GetAtt [BlitlineEcsExecutionRole, Arn]
+
+
+  BlitlineUser:
+    Type: AWS::IAM::User
+  BlitlinePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: This policy allows Blitline to access s3 buckets, perform Elastic Transcoder
+                   Actions, etc.
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Sid: S3BucketAccess
+            Effect: Allow
+            Action:
+              [
+                "s3:ListBucket",
+                "s3:GetBucketLocation",
+                "s3:ListBucketMultipartUploads"
+              ]
+            Resource:
+              [
+                !Sub '${TempBucket}',
+                !Sub '${SourceBucket}${ShortlifeSuffix}${PrivateSuffix}',
+                !Sub '${SourceBucket}${ShortlifeSuffix}'
+              ]
+          - Effect: Allow
+            Action:
+              [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:AbortMultipartUpload",
+                "s3:DeleteObject",
+                "s3:ListMultipartUploadParts",
+                "s3:ListObject"
+              ]
+            Resource:
+              [
+                !Sub '${TempBucket}/*',
+                !Sub '${TransientBucket}/*',
+                !Sub '${SourceBucket}/*',
+                !Sub '${SourceBucket}${ShortlifeSuffix}${PrivateSuffix}/*',
+                !Sub '${SourceBucket}${ShortlifeSuffix}/*'
+              ]
+          -
+            Sid: KinesisPutActions
+            Effect: Allow
+            Action:
+              - Kinesis:PutRecord
+              - Kinesis:PutRecords
+            Resource: {'Fn::ImportValue': !Sub '${PeripheralsStack}-KinesisStreamArn'}
+          -
+            Sid: ElasticTranscoderAccess
+            Effect: Allow
+            Action:
+              - elastictranscoder:*
+              - s3:ListAllMyBuckets
+              - s3:ListBucket
+              - iam:ListRoles
+              - sns:ListTopics
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: "*"
+            Condition:
+              StringLike:
+                iam:PassedToService:
+                - elastictranscoder.amazonaws.com
+
+      Users:
+        - Ref: BlitlineUser
+  BlitlineUserKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName:
+        Ref: BlitlineUser
+
+Outputs:
+  AccessKey:
+    Value:
+      Ref: BlitlineUserKey
+    Description: Access Key ID of Blitline User
+    Export:
+      Name: !Sub "${AWS::StackName}-BlitlineUserAccessKey"
+  SecretKey:
+    Value:
+      Fn::GetAtt:
+      - BlitlineUserKey
+      - SecretAccessKey
+    Description: Secret Key of Blitline User
+    Export:
+      Name: !Sub "${AWS::StackName}-BlitlineUserSecretAccessKey"
+
+  TaskRoleArn:
+    Value: !GetAtt BlitlineEcsTaskRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-TaskRoleArn"
+
+  ExecutionRoleArn:
+
+    Value: !GetAtt BlitlineEcsExecutionRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ExecutionRoleArn"

@@ -1,0 +1,793 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ops jenkins ecr repos
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+Mappings:
+  AccountMap:
+    content-now-pre-prod:
+      "Arn": "arn:aws:iam::147180035125:root"
+      "AccountId": "147180035125"
+    content-now-prod:
+      "Arn": "arn:aws:iam::507416135429:root"
+      "AccountId": "507416135429"
+    msb-pre-prod:
+      "Arn": "arn:aws:iam::880247372461:root"
+      "AccountId": "880247372461"
+    msb-prod:
+      "Arn": "arn:aws:iam::635365561645:root"
+      "AccountId": "635365561645"
+    mars-efd-dev:
+      "Arn": "arn:aws:iam::656419642964:root"
+      "AccountId": "656419642964"
+    mars-efd-stage:
+      "Arn": "arn:aws:iam::249411880833:root"
+      "AccountId": "249411880833"
+    mars-efd-prod:
+      "Arn": "arn:aws:iam::077047573990:root"
+      "AccountId": "077047573990"
+
+Resources:
+  JavaOnUbuntu:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/ubuntu-openjdk"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/ubuntu-openjdk"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  OttPackager:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "warnermedia/ott-packager"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "content-now-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "content-now-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "warnermedia/ott-packager"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  Eidr:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cn/eidr"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "content-now-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "content-now-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cn/eidr"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  PublishApi:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cn/publish-api"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "mars-efd-dev", "Arn"]
+                - !FindInMap [AccountMap, "mars-efd-stage", "Arn"]
+                - !FindInMap [AccountMap, "mars-efd-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cn/publish-api"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  PublishApiBatch:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cn/publish-batch"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "mars-efd-dev", "Arn"]
+                - !FindInMap [AccountMap, "mars-efd-stage", "Arn"]
+                - !FindInMap [AccountMap, "mars-efd-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cn/publish-batch"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  RetailerMetadata:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cn/retailer-metadata"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "content-now-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "content-now-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cn/retailer-metadata"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  AtomFeed:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cn/atom-feed"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "msb-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "msb-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cn/atom-feed"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  AtomSqsWorker:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cn/atom-sqs-worker"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "msb-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "msb-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cn/atom-sqs-worker"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  LogstashEtl:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cn/logstash-etl"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "content-now-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "content-now-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cn/logstash-etl"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  LiveSearchEtl:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cn/live-search-etl"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "content-now-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "content-now-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cn/live-search-etl"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  LiveSearchUI:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cn/live-search-ui"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "content-now-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "content-now-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cn/live-search-ui"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  ZipStream:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "contentnow/zipstream"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "content-now-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "content-now-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "contentnow/zipstream"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  NestBase:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cn/nest-base"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "content-now-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "content-now-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cn/nest-base"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  NestRelease:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cn/nest-release-candidate"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "content-now-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "content-now-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 90
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cn/nest-release-candidate"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  NestDevLocal:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "contentnow/nest-dev-local"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "content-now-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "content-now-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "contentnow/nest-dev-local"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  NestDevLocalTests:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cn/nuxeo-dev-local-tests"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "content-now-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "content-now-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cn/nuxeo-dev-local-tests"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+Outputs:
+  JavaOnUbuntu:
+    Description: "ops java on ubuntu ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${JavaOnUbuntu}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cmd-ubuntu-openjdk"
+
+  OttPackager:
+    Description: "ott packager ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${OttPackager}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cmd-ott-packager"
+
+  Eidr:
+    Description: "eidr ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Eidr}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cn-eidr"
+
+  RetailerMetadata:
+    Description: "retailer metadata ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${RetailerMetadata}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cn-retailer-metadata"
+
+  LogstashEtl:
+    Description: "logstash etl ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${LogstashEtl}"
+    Export:
+      Name: !Sub "${AWS::StackName}-logstash-etl"
+
+  LiveSearchUI:
+    Description: "livesearch ui repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${LiveSearchUI}"
+    Export:
+      Name: !Sub "${AWS::StackName}-live-search-ui"
+
+  LiveSearchEtl:
+    Description: "livesearch etl repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${LiveSearchEtl}"
+    Export:
+      Name: !Sub "${AWS::StackName}-live-search-etl"
+
+  ZipStream:
+    Description: "contentnow zip stream ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ZipStream}"
+    Export:
+      Name: !Sub "${AWS::StackName}-zip-stream"
+
+  NestDevLocal:
+    Description: "contentnow nest dev local ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${NestDevLocal}"
+    Export:
+      Name: !Sub "${AWS::StackName}-nest-dev-local"  
+      
+  NestBase:
+    Description: "contentnow nest base ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${NestBase}"
+    Export:
+      Name: !Sub "${AWS::StackName}-nest-base"
+
+  NestDevLocalTests:
+    Description: "contentnow nest dev local tests ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${NestDevLocalTests}"
+    Export:
+      Name: !Sub "${AWS::StackName}-nest-dev-local-tests"
+
+  AtomFeed:
+    Description: "atom feed ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${AtomFeed}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cn-atom-feed"
+
+  AtomSqsWorker:
+    Description: "atom sqs worker ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${AtomSqsWorker}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cn-atom-sqs-worker"

@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ops nexus on ecs with elb dns
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+  NexusDNSName:
+    Description: Nexus Alias for the ELB
+    Type: String
+    Default: nexus.cmd-ops.warnerbros.com
+
+Resources:
+  NexusDNS:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: "cmd-ops.warnerbros.com."
+      Comment: Zone apex alias targeted to Nexus ELB.
+      RecordSets:
+        - Name: !Ref NexusDNSName
+          Type: A
+          AliasTarget:
+            HostedZoneId:
+              Fn::ImportValue: !Sub "wb-cmd-${Environment}-ecs-nexus-alb-hosted-zone-id"
+            DNSName:
+              Fn::ImportValue: !Sub "wb-cmd-${Environment}-ecs-nexus-alb-dns-name"

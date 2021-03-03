@@ -1,0 +1,12 @@
+---
+- isMultiBranch: true
+  projectName: ask-docker
+  url: git@github.com:wm-msc-malt/ASK.git
+  description: ask docker build
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Ask
+  viewRegex: ((.*)ask(.*))
+  scmScanInterval: 5m
+  scriptPath: Jenkinsfile-Docker
+  includes: development stage master
+  

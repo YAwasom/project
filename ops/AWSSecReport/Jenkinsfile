@@ -1,0 +1,35 @@
+pipeline {
+    agent {
+        label "infra-tools-alpine-1cpu-2gb"
+    }
+    environment{
+        AWS_REGION = "us-west-2"
+        AWS = credentials("cmdt_jenkins_aws_credentials")
+    }
+    triggers { cron('H 12 * * 7') }
+    stages {
+        stage('start') {
+            steps {
+                sendNotifications "STARTED"
+            }
+        }
+        stage("RunReport") {
+            steps {
+                script {
+                    sh """
+                        cd ops/AWSSecReport
+                        ./AWSSecReport.sh CRITICAL 
+                        ./AWSSecReport.sh HIGH 
+                        ./CCSecReport.sh INFORMATIONAL
+
+                    """
+                }
+            }
+        }
+    }
+    post {
+    always {
+        sendNotifications currentBuild.currentResult
+        }
+    }
+}

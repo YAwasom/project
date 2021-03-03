@@ -1,0 +1,450 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ops jenkins ecr repos
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+Resources:
+  JenkinsMaster:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/jenkins"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/jenkins"
+        - Key: "Name"
+          Value: !Ref Environment
+
+  JenkinsSlaveGeneralBase:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/jenkins-amz2-jnlp-slave-base"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/jenkins-amz2-jnlp-slave-base"
+        - Key: "Name"
+          Value: !Ref Environment
+
+  JenkinsUbuntuSlaveGeneralBase:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/jenkins-ubuntu-jnlp-slave-base"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/jenkins-ubuntu-jnlp-slave-base"
+        - Key: "Name"
+          Value: !Ref Environment
+
+  JenkinsUbuntuSlaveGeneral:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/jenkins-ubuntu-jnlp-slave"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/jenkins-ubuntu-jnlp-slave"
+        - Key: "Name"
+          Value: !Ref Environment
+
+  JenkinsSlaveGeneral:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/jenkins-amz2-jnlp-slave"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/jenkins-amz2-jnlp-slave"
+        - Key: "Name"
+          Value: !Ref Environment
+
+  JenkinsSlaveDockerInDocker:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/jenkins-alpine-jnlp-slave-dind"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/jenkins-alpine-jnlp-slave-dind"
+        - Key: "Name"
+          Value: !Ref Environment
+
+  JenkinsUbuntuSlaveDockerInDocker:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/jenkins-ubuntu-jnlp-slave-dind"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/jenkins-ubuntu-jnlp-slave-dind"
+        - Key: "Name"
+          Value: !Ref Environment
+
+  JenkinsSlaveVis:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/jenkins-alpine-jnlp-vis-slave"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/jenkins-alpine-jnlp-vis-slave"
+        - Key: "Name"
+          Value: !Ref Environment
+
+  PublishApiSlave:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/jenkins-alpine-jnlp-publish-api-slave"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/jenkins-alpine-jnlp-publish-api-slave"
+        - Key: "Name"
+          Value: !Ref Environment
+
+  JenkinsSlaveNode:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/jenkins-alpine-jnlp-node-slave"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/jenkins-alpine-jnlp-node-slave"
+        - Key: "Name"
+          Value: !Ref Environment
+
+  AskNPSlave:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/ask-np-jnlp-slave"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/ask-np-jnlp-slave"
+        - Key: "Name"
+          Value: !Ref Environment
+        
+  AskSlave:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/ask-jnlp-slave"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/ask-jnlp-slave"
+        - Key: "Name"
+          Value: !Ref Environment  
+          
+  InfraBuildToolsSlave:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "cmd/jenkins-alpine-jnlp-infra-build-tools-slave"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "cmd/jenkins-alpine-jnlp-infra-build-tools-slave"
+        - Key: "Name"
+          Value: !Ref Environment
+        
+Outputs:
+  JenkinsMaster:
+    Description: "ops jenkins master ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${JenkinsMaster}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cmd-jenkins-master"
+  JenkinsSlaveGeneralBase:
+    Description: "ops jenkins general slave base ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${JenkinsSlaveGeneralBase}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cmd-jenkins-amz2-jnlp-slave-base"
+  JenkinsSlaveGeneral:
+    Description: "ops jenkins general slave ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${JenkinsSlaveGeneral}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cmd-jenkins-amz2-jnlp-slave"
+  JenkinsSlaveDockerInDocker:
+    Description: "ops jenkins docker in docker ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${JenkinsSlaveDockerInDocker}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cmd-jenkins-alpine-jnlp-slave-dind"
+  JenkinsUbuntuSlaveDockerInDocker:
+    Description: "ops jenkins ubuntu docker in docker ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${JenkinsUbuntuSlaveDockerInDocker}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cmd-jenkins-ubuntu-jnlp-slave-dind"
+  JenkinsUbuntuSlaveGeneral:
+    Description: "ops jenkins ubuntu general slave base ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${JenkinsSlaveGeneralBase}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cmd-jenkins-ubuntu-jnlp-slave"
+  JenkinsSlaveVis:
+    Description: "ops jenkins vis jenkins slave ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${JenkinsSlaveVis}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cmd-jenkins-alpine-jnlp-vis-slave"
+  JenkinsSlaveNode:
+    Description: "ops jenkins node jenkins slave ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${JenkinsSlaveNode}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cmd-jenkins-alpine-jnlp-node-slave"
+  AskSlave:
+    Description: "ops jenkins ask jenkins slave ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${AskSlave}"
+    Export:
+      Name: !Sub "${AWS::StackName}-cmd-jenkins-amz2-ask-jnlp-slave"

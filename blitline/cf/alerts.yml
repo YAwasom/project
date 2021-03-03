@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Blitline Alerts"
+
+Parameters:
+  ProjectName:
+    Description: "Top level project name"
+    Type: String
+
+  Environment:
+    Description: Environment
+    Type: String
+    
+  Ec2Stack:
+    Description: Ec2 Stack
+    Type: String
+  
+  PeripheralsStack:
+    Description: Peripherals Stack
+    Type: String
+
+Resources:
+
+  AutoscalingGroupCPUUtilizationECSClusterAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: 'ECS Cluster CPU Utilization Alarm'
+      Namespace: 'AWS/ECS'
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: ClusterName
+          Value: 
+            Fn::ImportValue: !Sub "${Ec2Stack}-EcsCluster"
+      Statistic: Average
+      Period: 120
+      EvaluationPeriods: 1
+      Threshold: 70
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+      - Fn::ImportValue: !Sub "${PeripheralsStack}-ErrorSNSTopic"
+      OKActions:
+      - Fn::ImportValue: !Sub "${PeripheralsStack}-ErrorSNSTopic"
+      TreatMissingData: ignore
+
+  AutoscalingGroupMemoryUtilizationECSClusterAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: 'ECS Cluster Memory Utilization Alarm'
+      Namespace: 'AWS/ECS'
+      MetricName: MemoryUtilization
+      Dimensions:
+        - Name: ClusterName
+          Value: 
+            Fn::ImportValue: !Sub "${Ec2Stack}-EcsCluster"
+      Statistic: Average
+      Period: 120
+      EvaluationPeriods: 1
+      Threshold: 70
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+      - Fn::ImportValue: !Sub "${PeripheralsStack}-ErrorSNSTopic"
+      OKActions:
+      - Fn::ImportValue: !Sub "${PeripheralsStack}-ErrorSNSTopic"
+      TreatMissingData: ignore

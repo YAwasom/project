@@ -1,0 +1,6 @@
+[opsrepo]
+name=opsrepo
+baseurl=https://nexus.cmd-ops.warnerbros.com/repository/ops-yum/
+enabled=1
+repo_gpgcheck=0
+priority=1

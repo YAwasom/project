@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: SNS Alerts for Pagerduty
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+  PagerDutyEndpoint:
+    Type: String
+    Description: Pagerduty Endpoint
+
+Resources:
+  ErrorSNSTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-errors"
+      DisplayName: !Sub "${AWS::StackName}-errors"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}-errors"
+
+  ErrorSNSTopicPolicy:
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Id: !Sub "${AWS::StackName}-errors"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Allow services
+            Effect: Allow
+            Principal:
+              Service:
+                - "events.amazonaws.com"
+                - "s3.amazonaws.com"
+            Action: "sns:Publish"
+            Resource: !Ref ErrorSNSTopic
+          - Sid: Allow publish access
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Action: "sns:Publish"
+            Resource: !Ref ErrorSNSTopic
+            Condition:
+              StringEquals:
+                "AWS:SourceOwner": !Ref "AWS::AccountId"
+          - Sid: Allow ses
+            Effect: Allow
+            Principal:
+              Service: "ses.amazonaws.com"
+            Action: "sns:Publish"
+            Resource: !Ref ErrorSNSTopic
+            Condition:
+              StringEquals:
+                "AWS:Referer": !Ref "AWS::AccountId"
+      Topics:
+        - !Ref ErrorSNSTopic
+
+  ErrorSNSTopicPagerdutySubscription:
+    Type: "AWS::SNS::Subscription"
+    Properties:
+      DeliveryPolicy:
+        healthyRetryPolicy:
+          minDelayTarget: 1
+          maxDelayTarget: 60
+          numRetries: 100
+          numNoDelayRetries: 0
+          backoffFunction: exponential
+        throttlePolicy:
+          maxReceivesPerSecond: 1
+      Protocol: https
+      TopicArn: !Ref ErrorSNSTopic
+      Endpoint: !Ref PagerDutyEndpoint
+
+Outputs:
+  ErrorSNSTopic:
+    Description: "error sns topic which ties into pagerduty"
+    Value: !Ref ErrorSNSTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-error-topic-arn"

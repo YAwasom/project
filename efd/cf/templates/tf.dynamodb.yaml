@@ -1,0 +1,109 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "Warner Media Terraform DynamoDb Tables"
+
+Parameters:
+  Environment:
+    Description: env
+    Default: dev
+    Type: String
+    AllowedValues:
+      - dev
+      - stg
+      - prod
+
+Resources:
+  TerraformBackendLock:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-backend-state-lock
+      AttributeDefinitions:
+        - AttributeName: LockID
+          AttributeType: S
+      BillingMode: PROVISIONED
+      KeySchema:
+        - AttributeName: LockID
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        KMSMasterKeyId: !Ref BackendS3KmsKey
+        SSEEnabled: true
+        SSEType: KMS
+      Tags:
+        - Key: Attributes
+          Value: state-lock
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-backend-state-lock
+
+  BackendS3KmsKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: kms key tf backend
+      EnableKeyRotation: true
+      KeyPolicy:
+        Id: !Sub "${AWS::StackName}"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of this key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}"
+
+  BackendKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}"
+      TargetKeyId: !Ref BackendS3KmsKey

@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Set the Route 53 DNS Record Set for the blitline vpc endpoint'
+
+Parameters:
+  ###
+  HostedZoneId: 
+    Description: ID of the hosted zone
+    Type: String
+
+  DomainName:
+    Description: Domain Name 
+    Type: String
+  
+  Name: 
+    Description: 
+    Type: String 
+
+  RecordType : CNAME
+    Description: String
+    Type: String
+
+  Alias: 
+    Type: String
+    Default: false
+  
+  TTLSeconds:
+    Type: String
+    Default: 300
+
+  RoutingPolicy: 
+    Type: String
+    Default: simple
+  
+  ResourceRecord : 
+    Type: String 
+    Description: The CNAME or IP to which the DNSNAME (Name) Points To
+  
+  AliasZoneId:
+    Type: String
+    Description: Alias Zone ID
+  
+Resources:
+  R53RecordSet:
+    Type:   
+    Properties: 
+      Name: !Sub "${Name}.${DomainName}"
+      Type: !Ref RecordType
+      HostedZoneId: !Ref TargetZoneId
+      TTL: !Ref TTLSeconds
+      ResourceRecords:
+      - !Ref ResourceRecord
+
+      AliasTarget:
+        DNSName: !Ref SourceUrl
+        HostedZoneId: !Ref AliasZoneId

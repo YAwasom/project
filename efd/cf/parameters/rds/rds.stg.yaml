@@ -1,0 +1,5 @@
+Environment: stg
+RdsInstanceClass: db.m5.large
+MySQLDbName: MyDatabase
+MySQLMasterUserName: marsservice
+MySQLPassword: MyPassword

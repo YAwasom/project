@@ -1,0 +1,5 @@
+jobs:
+  - file: ${JENKINS_HOME}/dsl/boot_seed_sync/view.groovy
+  - file: ${JENKINS_HOME}/dsl/boot_seed_sync/seed.groovy
+  - file: ${JENKINS_HOME}/dsl/boot_seed_sync/boot.groovy
+  - file: ${JENKINS_HOME}/dsl/boot_seed_sync/sync.groovy

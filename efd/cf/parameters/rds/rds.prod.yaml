@@ -1,0 +1,5 @@
+Environment: prod
+RdsInstanceClass: db.m5.2xlarge
+MySQLDbName: MyDatabase
+MySQLMasterUserName: marsservice
+MySQLPassword: MyPassword

@@ -1,0 +1,7 @@
+Environment: stg
+CIDRPublicA: 10.176.236.0/26
+CIDRPrivateA: 10.176.236.64/26	
+CIDRPrivateB: 10.176.236.128/26	
+CIDRPrivateC: 10.176.236.192/26	
+CIDRVpc: 10.176.236.0/24
+ProjectName: wbts-efd-stg

@@ -1,0 +1,55 @@
+---
+- isMultiBranch: true
+  projectName: efd-flux-app-deploy
+  url: git@github.com:wm-msc-malt/efdawsmigration.git
+  description: Flux and app deployment
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: EFD
+  viewRegex: ((.*)efd(.*))
+  scmScanInterval: 5m
+  scriptPath: Jenkinsfile
+  includes: dev stage master
+
+- isMultiBranch: true
+  projectName: efd-flux-docker
+  url: git@github.com:wm-msc-malt/efdawsmigration.git
+  description: Flux Docker Deploy
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: EFD
+  viewRegex: ((.*)efd(.*))
+  scmScanInterval: 5m
+  scriptPath: efd-docker-stack/flux/Jenkinsfile
+  includes: dev stage master
+
+- isMultiBranch: true
+  projectName: efd-surly-ws-docker
+  url: git@github.com:wm-msc-malt/efdawsmigration.git
+  description: EFD Surly WS Docker Deploy
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: EFD
+  viewRegex: ((.*)efd(.*))
+  scmScanInterval: 5m
+  scriptPath: mars-efd-surly-ws/Jenkinsfile
+  includes: dev stage master
+
+- isMultiBranch: true
+  projectName: efd-ws-docker
+  url: git@github.com:wm-msc-malt/efdawsmigration.git
+  description: EFD WS Docker Deploy
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: EFD
+  viewRegex: ((.*)efd(.*))
+  scmScanInterval: 5m
+  scriptPath: mars-efd-ws/Jenkinsfile
+  includes: dev stage master
+
+- isMultiBranch: true
+  projectName: efd-blitline-docker
+  url: git@github.com:wm-msc-malt/efdawsmigration.git
+  description: EFD Blitline Docker Deploy
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: EFD
+  viewRegex: ((.*)efd(.*))
+  scmScanInterval: 5m
+  scriptPath: mars-efd-blitline-ws/Jenkinsfile
+  includes: dev stage master

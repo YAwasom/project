@@ -1,0 +1,449 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: ops roles
+
+Parameters:
+  Environment:
+    Description: "An environment name that will be appended to resource names"
+    Type: "String"
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+Resources:
+
+  OpsSSMKmsKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: kms key for ops parameter store, used for all services that need to decrypt and encrypt ssm params
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: !Sub "${AWS::StackName}-${AWS::Region}-key"
+        Statement:
+          - Sid: Allow administration of the key
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:*"
+            Resource: "*"
+          - Sid: Allow Encrypt and Decrypt of this key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !GetAtt OpsSSMAccessRole.Arn
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+            Resource: "*"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}-${AWS::Region}-key"
+  
+  OpsSSMKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-${AWS::Region}"
+      TargetKeyId: !Ref OpsSSMKmsKey
+
+  OpsSSMAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-${AWS::Region}-ssm-access"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - arn:aws:iam::348180535083:root
+                - arn:aws:iam::867862831407:root
+                - arn:aws:iam::037058588790:root
+                - arn:aws:iam::232341177191:root
+                - arn:aws:iam::565451185613:root
+                - arn:aws:iam::147180035125:root
+                - arn:aws:iam::507416135429:root
+                - arn:aws:iam::161790439860:root
+                - arn:aws:iam::522601909192:root
+                - arn:aws:iam::559928269788:root
+                - arn:aws:iam::866300372279:root
+                - arn:aws:iam::348180535083:root
+                - arn:aws:iam::188664039510:root
+                - arn:aws:iam::394203625936:root
+                - arn:aws:iam::456261441755:root
+                - arn:aws:iam::471371157684:root
+                - arn:aws:iam::586566971867:root
+                - arn:aws:iam::606982715702:root
+                - arn:aws:iam::656419642964:root
+                - arn:aws:iam::077047573990:root
+                - arn:aws:iam::249411880833:root
+                - arn:aws:iam::880247372461:root
+                - arn:aws:iam::635365561645:root
+                - arn:aws:iam::348180535083:root
+                - arn:aws:iam::555265525763:root
+                - arn:aws:iam::338655496393:root
+                - arn:aws:iam::600690981795:root
+                - arn:aws:iam::180568757402:root
+                - arn:aws:iam::183379772110:root
+            Action: 
+              - "sts:AssumeRole"
+              - "sts:TagSession"
+      Policies:
+        - PolicyName: all-accounts-sengrid-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/ops/securityhub/sendgrid/apiuser'
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/ops/securityhub/sendgrid/apikey'
+        - PolicyName: ask-dev-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/867862831407/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 867862831407
+        - PolicyName: ask-prod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/037058588790/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 037058588790
+        - PolicyName: cmd-test-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/232341177191/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 232341177191
+        - PolicyName: cmd-top-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/565451185613/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 565451185613
+        - PolicyName: contentnow-dev-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/147180035125/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 147180035125
+        - PolicyName: contentnow-prod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/507416135429/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 507416135429
+        - PolicyName: contentnow-ms-dev-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/161790439860/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 161790439860
+        - PolicyName: contentnow-ms-prod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/522601909192/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 522601909192
+        - PolicyName: globarch-darch-nonprod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/559928269788/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 559928269788
+        - PolicyName: globarch-darh-prod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/866300372279/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 866300372279
+        - PolicyName: gamedmedia-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/188664039510/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 188664039510
+        - PolicyName: holmes-nonprod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/394203625936/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 394203625936
+        - PolicyName: holmes-preview-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/456261441755/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 456261441755
+        - PolicyName: holmes-prod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/471371157684/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 471371157684
+        - PolicyName: marklogic-nonprod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/586566971867/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 586566971867
+        - PolicyName: marklogic-prod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/606982715702/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 606982715702
+        - PolicyName: marsefd-nonprod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/656419642964/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 656419642964
+        - PolicyName: marsefd-prod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/077047573990/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 077047573990
+        - PolicyName: marsefd-stage-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/249411880833/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 249411880833
+        - PolicyName: msb-nonprod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/880247372461/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 880247372461
+        - PolicyName: msb-prod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/635365561645/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 635365561645
+        - PolicyName: ops-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/348180535083/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 348180535083
+        - PolicyName: vis-dev-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/555265525763/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 555265525763
+        - PolicyName: vis-preview-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/338655496393/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 338655496393
+        - PolicyName: vis-prod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/600690981795/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 600690981795
+        - PolicyName: wflow-nonprod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/180568757402/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 180568757402
+        - PolicyName: wflow-prod-ssm-access
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters*
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/183379772110/*'
+                Condition:
+                  StringEquals:
+                    'aws:PrincipalTag/SourceAccount': 183379772110
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-access-role"
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  OpsSSMAccessRole:
+    Description: "ops-ssm-access ole"
+    Value: !Ref OpsSSMAccessRole
+    Export:
+      # wb-cmd-ops-ssm-access-role
+      Name: !Sub "${AWS::StackName}-${AWS::Region}-access-role"
+
+  OpsSSMKmsKeyAlias:
+    Description: "ops ssm kms alias"
+    Value: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${OpsSSMKmsKeyAlias}"
+    Export:
+      # wb-cmd-ops-kms-us-west-2-secrets-alias
+      Name: !Sub "${AWS::StackName}-${AWS::Region}-ssm-alias"

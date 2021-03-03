@@ -1,0 +1,24 @@
+{
+  "Version": "2012-10-17",
+  "Id": "sqs-policy-queued-builds",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": [
+          "${aws_account_id}"
+        ]
+      },
+      "Action": [
+        "SQS:DeleteMessage",
+        "SQS:ListDeadLetterSourceQueues",
+        "SQS:ReceiveMessage",
+        "SQS:SendMessage",
+        "SQS:GetQueueAttributes"
+      ],
+      "Resource": [
+        "${sqs_arn}"
+      ]
+    }
+  ]
+}

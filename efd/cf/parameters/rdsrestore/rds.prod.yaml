@@ -1,0 +1,8 @@
+Environment: prod
+RdsInstanceClass: db.m5.2xlarge
+MySQLDbName: MyDatabase
+MySQLMasterUserName: marsservice
+MySQLPassword: MyPassword
+DbSnapshot: arn:aws:rds:us-west-2:077047573990:snapshot:marsefd-prod-cutover-snapshot-03102020
+DBAllocated: 400
+MaxDBAllocated: 600

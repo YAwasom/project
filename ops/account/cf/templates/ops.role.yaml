@@ -1,0 +1,52 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: ops roles
+
+Parameters:
+  Environment:
+    Description: "An environment name that will be appended to resource names"
+    Type: "String"
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+Resources:
+  VpcFlowLogRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-${AWS::Region}-vpc-flow-logs"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "vpc-flow-logs.amazonaws.com"
+            Action: ["sts:AssumeRole"]
+      Policies:
+        - PolicyName: vpc-flow-log
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                Resource: "*"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-${AWS::Region}-vpc-flow-logs"
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  VpcFlowLogRoleArn:
+    Description: "ops vpc flow log role"
+    Value: !GetAtt VpcFlowLogRole.Arn
+    Export:
+      # wb-cmd-ops-role-us-west-2-vpc-flow-logs-arn
+      Name: !Sub "${AWS::StackName}-${AWS::Region}-vpc-flow-logs-arn"

@@ -1,0 +1,99 @@
+unclassified:
+  location:
+    adminAddress: "cmd-ops@warnerbros.com"
+    url: ${JENKINS_HOST_URL}
+
+  pollSCM:
+    pollingThreadCount: 10
+
+  slackNotifier:
+    botUser: true
+    sendAsText: false
+    slackUserIdResolver: "email"
+    teamDomain: "warnerbrostechnology"
+    tokenCredentialId: "slack_outgoing_webhook_token"
+
+  globalLibraries:
+    libraries:
+      - name: jenkins-shared-libs
+        defaultVersion: master
+        allowVersionOverride: true
+        implicit: true
+        retriever:
+          modernSCM:
+            scm:
+              git:
+                remote: "git@github.com:wm-msc-malt/jenkins-shared-libs.git"
+                credentialsId: "cmdt_jenkins_github_ssh_key"
+
+  gitSCM:
+    createAccountBasedOnEmail: false
+    globalConfigEmail: "msc-malt-jenkins@warnerbros.com"
+    globalConfigName: "msc-malt-jenkins"
+    showEntireCommitSummaryInChanges: false
+    useExistingAccountWithSameEmail: false
+
+  timestamper:
+    elapsedTimeFormat: "'<b>'HH:mm:ss.S'</b> '"
+    systemTimeFormat: "'<b>'HH:mm:ss'</b> '"
+
+  buildStepOperation:
+    enabled: false
+
+  globalNexusConfiguration:
+    instanceId: "3e4daf9114e445db83f10ebd531ce022"
+    nxrmConfigs:
+    - nxrm3Configuration:
+        credentialsId: nexus_jenkins
+        displayName: nexus
+        id: nexus.contentnow
+        internalId: "2577a3ad-2700-4307-a2a4-e54c73f9bdb0"
+        serverUrl: "https://nexus.cmd-ops.warnerbros.com/"
+
+  metricsAccessKey:
+    accessKeys:
+    - canHealthCheck: true
+      canMetrics: true
+      canPing: true
+      canThreadDump: false
+      description: Metrics access keys
+      key: ${METRICS_ACCESS_KEY}
+      origins: "*"
+
+  globalConfigFiles:
+    configs:
+    - mavenSettings:
+        id: nuxeo-nest-maven-settings
+        name: nuxeo-nest-maven-settings
+        comment: Nuxeo nest maven settings for builds via mvn release:perform
+        isReplaceAll: false
+        serverCredentialMappings:
+        - serverId: hotfix-snapshots
+          credentialsId: nest_nuxeo
+        - serverId: hotfix-releases
+          credentialsId: nest_nuxeo
+        - serverId: nuxeo-studio
+          credentialsId: nest_nuxeo
+        - serverId: wb-nexus
+          credentialsId: nexus_jenkins
+        content: |
+          <?xml version="1.0" encoding="UTF-8"?>
+          <settings
+            xmlns="http://maven.apache.org/SETTINGS/1.1.0"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.1.0 http://maven.apache.org/xsd/settings-1.1.0.xsd">
+            <servers>
+              <server>
+                <id>hotfix-snapshots</id>
+              </server>
+              <server>
+                <id>hotfix-releases</id>
+              </server>
+              <server>
+                <id>nuxeo-studio</id>
+              </server>
+              <server>
+                <id>wb-nexus</id>
+              </server>
+          </servers>
+          </settings>

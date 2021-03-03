@@ -1,0 +1,290 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Parameters:
+  VPCStack:
+    Description: "VPC Parent Stack"
+    Type: String
+  CertificateARN:
+    Description: "ARN of ALB Certificate"
+    Type: String
+  CognitoStack:
+    Description: "Cognito Stack"
+    Type: String
+
+Resources:
+  ApiAlb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: ipv4
+      Name: !Sub "wb-cmd-${AWS::StackName}-alb"
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref ApiAlbSecurityGroup
+      Subnets:
+        - Fn::ImportValue: !Sub ${VPCStack}-PublicSubnetAID
+        - Fn::ImportValue: !Sub ${VPCStack}-PublicSubnetBID
+        #- Fn::ImportValue: !Sub ${VPCStack}-PublicSubnetCID
+      Type: application
+  ApiAlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      Certificates:
+        - CertificateArn: !Ref CertificateARN
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            ContentType: "text/plain"
+            MessageBody: "Warner Bros CMD API"
+            StatusCode: "200"
+      LoadBalancerArn: !Ref ApiAlb
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-2016-08
+  ApiAlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "ALB Security Group"
+      GroupName: !Sub "wb-cmd-${AWS::StackName}-alb-sg"
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 168.161.192.0/21
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 168.161.18.1/32
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 168.161.22.1/32
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 168.161.200.15/32
+      VpcId:
+        Fn::ImportValue: !Sub ${VPCStack}-VPCID
+  ApiEPSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "EndPoint Security Group"
+      GroupName: !Sub "wb-cmd-${AWS::StackName}-ep-sg"
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp:
+            Fn::ImportValue: !Sub ${VPCStack}-VPCCidr
+      VpcId:
+        Fn::ImportValue: !Sub ${VPCStack}-VPCID
+  #### ------------------ Blitline  --------------------------- ####
+  BlitlineEP:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: false
+      SecurityGroupIds:
+        - !Ref ApiEPSecurityGroup
+      ServiceName: com.amazonaws.vpce.us-west-2.vpce-svc-0d30799844ac12ad2
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${VPCStack}-PrivateSubnetAID
+        - Fn::ImportValue: !Sub ${VPCStack}-PrivateSubnetBID
+        #- Fn::ImportValue: !Sub ${VPCStack}-PrivateSubnetCID #AZs need to match target
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: !Sub ${VPCStack}-VPCID
+  BlitlineTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /blitline-web/health
+      HealthCheckPort: 443
+      HealthCheckProtocol: HTTPS
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Name: !Sub "wb-cmd-${AWS::StackName}-blt-tg"
+      Port: 443
+      Protocol: HTTPS
+      Targets:
+        - Id: !GetAtt GetBltPrivateIPs.IP0
+        - Id: !GetAtt GetBltPrivateIPs.IP1
+      TargetType: ip
+      UnhealthyThresholdCount: 2
+      VpcId:
+        Fn::ImportValue: !Sub ${VPCStack}-VPCID
+  BlitlineListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Priority: 1
+      Actions:
+        - Type: authenticate-cognito
+          AuthenticateCognitoConfig:
+            UserPoolArn:
+              Fn::ImportValue: !Sub ${CognitoStack}-PoolArn
+            UserPoolClientId:
+              Fn::ImportValue: !Sub ${CognitoStack}-BlitlineClientId #CheckThis
+            UserPoolDomain:
+              Fn::ImportValue: !Sub ${CognitoStack}-UserPoolDomain
+          Order: 1
+        - Type: forward
+          TargetGroupArn: !Ref BlitlineTG
+          Order: 2
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - "/blitline-web/*"
+      ListenerArn: !Ref ApiAlbListener
+    DependsOn: ApiAlbListener
+  ####-------------------------------- PublishApi ---------------------####
+  PublishApiEP:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: false
+      SecurityGroupIds:
+        - !Ref ApiEPSecurityGroup
+      ServiceName: com.amazonaws.vpce.us-west-2.vpce-svc-0f0a4755e095fa972 #Service
+      SubnetIds:
+        - Fn::ImportValue: !Sub ${VPCStack}-PrivateSubnetAID
+        - Fn::ImportValue: !Sub ${VPCStack}-PrivateSubnetBID
+      VpcEndpointType: Interface
+      VpcId:
+        Fn::ImportValue: !Sub ${VPCStack}-VPCID
+  PublishApiTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /outbound/health
+      HealthCheckPort: 443
+      HealthCheckProtocol: HTTPS
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Name: !Sub "wb-cmd-${AWS::StackName}-pubapi-tg"
+      Port: 443
+      Protocol: HTTPS
+      Targets:
+        - Id: !GetAtt GetPApiPrivateIPs.IP0
+        - Id: !GetAtt GetPApiPrivateIPs.IP1
+      TargetType: ip
+      UnhealthyThresholdCount: 2
+      VpcId:
+        Fn::ImportValue: !Sub ${VPCStack}-VPCID
+  PublishApiListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Priority: 2
+      Actions:
+        - Type: authenticate-cognito
+          AuthenticateCognitoConfig:
+            UserPoolArn:
+              Fn::ImportValue: !Sub ${CognitoStack}-PoolArn
+            UserPoolClientId:
+              Fn::ImportValue: !Sub ${CognitoStack}-PublishApiClientId #CheckThis
+            UserPoolDomain:
+              Fn::ImportValue: !Sub ${CognitoStack}-UserPoolDomain
+          Order: 1
+        - Type: forward
+          TargetGroupArn: !Ref PublishApiTG
+          Order: 2
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - "/outbound/*"
+      ListenerArn: !Ref ApiAlbListener
+    DependsOn: ApiAlbListener
+
+  #
+  # The following is because AWS does not support getting the IPs from the VPC Endpoint
+  #
+
+  GetBltPrivateIPs:
+    DependsOn:
+      - BlitlineEP
+    Type: Custom::GetPrivateIPs
+    Properties:
+      ServiceToken: !GetAtt LambdaFunction.Arn
+      NetworkInterfaceIDs: !GetAtt BlitlineEP.NetworkInterfaceIds
+
+  GetPApiPrivateIPs:
+    DependsOn:
+      - PublishApiEP
+    Type: Custom::GetPrivateIPs
+    Properties:
+      ServiceToken: !GetAtt LambdaFunction.Arn
+      NetworkInterfaceIDs: !GetAtt PublishApiEP.NetworkInterfaceIds
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    DeletionPolicy: "Delete"
+    Properties:
+      Code:
+        ZipFile: !Sub |
+          import cfnresponse
+          import json
+          import boto3
+          import warnings
+          warnings.filterwarnings("ignore", message="DeprecationWarning ")
+          def lambda_handler(event, context):
+              print('REQUEST RECEIVED:\n' + json.dumps(event))
+              responseData = {}
+              if event['RequestType'] == 'Delete':
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+                return
+              if event['RequestType'] == 'Create':
+                try:
+                  ec2 = boto3.resource('ec2')
+                  enis = event['ResourceProperties']['NetworkInterfaceIDs']
+                  for index, eni in enumerate(enis):
+                    network_interface = ec2.NetworkInterface(eni)
+                    responseData['IP' + str(index)] = network_interface.private_ip_address
+                    print(responseData)
+                except Exception as e:
+                  responseData = {'error': str(e)}
+                  cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
+                  return
+                cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: python3.7
+      Timeout: 10
+      Layers:
+        - arn:aws:lambda:us-west-2:420165488524:layer:AWSLambda-Python-AWS-SDK:5
+    DependsOn:
+      - LambdaPolicy
+      - LambdaRole
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+  LambdaPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: LambdaPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - ec2:*
+              - logs:*
+            Resource: "*"
+      Roles:
+        - !Ref LambdaRole

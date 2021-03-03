@@ -1,0 +1,13 @@
+---
+- isMultiBranch: false
+  projectName: ssimwave-packer-builder
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: build base ami for ssimwave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: ssimwave
+  viewRegex: ((.*)ssimwave(.*))
+  scriptPath: ssimwave/packer/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true

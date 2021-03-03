@@ -1,0 +1,23 @@
+#! /bin/zsh
+
+profile=$1
+region=${2:-us-west-2}
+
+PROFILES=($(cat ~/.aws/config | grep '\[profile' | sed -n 's/\[profile \(.*\).*\]/\1/p' | sort))
+
+if [ -z "$profile" ];  then
+    printf '%s\n' "${PROFILES[@]}"
+    exit 1
+fi
+
+if [[ ! " ${PROFILES[@]} " =~ " ${profile} " ]]; then
+    echo "No such profile in ~/.aws/profile => $profile"
+    exit 1
+fi
+
+
+setopt promptsubst
+new_line=$'\n'
+reset=`tput sgr0`
+
+AWS_DEFAULT_PROFILE=$profile AWS_PROFILE=$profile AWS_DEFAULT_REGION=$region AWS_REGION=$region PS1="%~ %F{yellow}[%F{blue}$AWS_DEFAULT_PROFILE-$AWS_DEFAULT_REGION%F{yellow}]:${reset}${new_line}🌨  " zsh -f

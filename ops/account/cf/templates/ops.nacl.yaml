@@ -1,0 +1,253 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: ops network acl
+
+Parameters:
+  Environment:
+    Description: "An environment name that will be appended to resource names"
+    Type: "String"
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+Resources:
+  PublicNetworkAcl:
+    Type: "AWS::EC2::NetworkAcl"
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-id"
+      Tags:
+        - Key: Name
+          # wb-cmd-${Environment}-nacl-public
+          Value: !Sub "${AWS::StackName}-public"
+
+  PrivateNetworkAcl:
+    Type: "AWS::EC2::NetworkAcl"
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-id"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-private"
+
+  # Associate the public network acl with public subnets
+  PublicNetworkAclAssociationWithPublicSubnetA:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-public-subnet-a"
+      NetworkAclId: !Ref PublicNetworkAcl
+
+  PublicNetworkAclAssociationWithPublicSubnetB:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-public-subnet-b"
+      NetworkAclId: !Ref PublicNetworkAcl
+
+  PublicNetworkAclAssociationWithPublicSubnetC:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-public-subnet-c"
+      NetworkAclId: !Ref PublicNetworkAcl
+
+  # Associate the private network acl with private subnets
+  PrivateNetworkAclAssociationWithPrivateSubnetA:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-private-subnet-a"
+      NetworkAclId: !Ref PrivateNetworkAcl
+
+  PrivateNetworkAclAssociationWithPrivateSubnetB:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-private-subnet-b"
+      NetworkAclId: !Ref PrivateNetworkAcl
+
+  PrivateNetworkAclAssociationWithPrivateSubnetC:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-private-subnet-c"
+      NetworkAclId: !Ref PrivateNetworkAcl
+
+  # Public acl inbound rules
+  NetworkAclEntryInPublicAllowHttp:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      RuleNumber: 200
+      Protocol: 6
+      RuleAction: allow
+      Egress: false
+      CidrBlock: "0.0.0.0/0"
+      PortRange:
+        From: "80"
+        To: "80"
+
+  NetworkAclEntryInPublicAllowHttps:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      RuleNumber: 210
+      Protocol: 6
+      RuleAction: allow
+      Egress: false
+      CidrBlock: "0.0.0.0/0"
+      PortRange:
+        From: "443"
+        To: "443"
+
+  NetworkAclEntryInPublicAllowEphemeral:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      RuleNumber: 230
+      Protocol: 6
+      RuleAction: allow
+      Egress: false
+      CidrBlock: "0.0.0.0/0"
+      PortRange:
+        From: "1024"
+        To: "65535"
+
+  NetworkAclEntryOutPublicAllowSshToPrivateSubnets:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      RuleNumber: 240
+      Protocol: 6
+      RuleAction: allow
+      Egress: true
+      CidrBlock: "0.0.0.0/0"
+      # Required for jenkins to github
+      PortRange:
+        From: "22"
+        To: "22"
+
+  # Public acl outbound rules
+  NetworkAclEntryOutPublicAllowHttp:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      RuleNumber: 200
+      Protocol: 6
+      RuleAction: allow
+      Egress: true
+      CidrBlock: "0.0.0.0/0"
+      PortRange:
+        From: "80"
+        To: "80"
+
+  NetworkAclEntryOutPublicAllowHttps:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      RuleNumber: 210
+      Protocol: 6
+      RuleAction: allow
+      Egress: true
+      CidrBlock: "0.0.0.0/0"
+      PortRange:
+        From: "443"
+        To: "443"
+
+  NetworkAclEntryOutPublicAllowEphemeral:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PublicNetworkAcl
+      RuleNumber: 230
+      Protocol: 6
+      RuleAction: allow
+      Egress: true
+      CidrBlock: "0.0.0.0/0"
+      PortRange:
+        From: "1024"
+        To: "65535"
+
+  # Private acl inbound rules
+  NetworkAclEntryInPrivateAllowEphemeralIn:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      RuleNumber: 210
+      Protocol: 6
+      RuleAction: allow
+      Egress: false
+      CidrBlock: "0.0.0.0/0"
+      PortRange:
+        From: "1024"
+        To: "65535"
+
+  # Private acl outbound rules
+  NetworkAclEntryOutPrivateAllowHttp:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      RuleNumber: 200
+      Protocol: 6
+      RuleAction: allow
+      Egress: true
+      CidrBlock: "0.0.0.0/0"
+      PortRange:
+        From: "80"
+        To: "80"
+
+  NetworkAclEntryOutPrivateAllowHttps:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      RuleNumber: 210
+      Protocol: 6
+      RuleAction: allow
+      Egress: true
+      CidrBlock: "0.0.0.0/0"
+      PortRange:
+        From: "443"
+        To: "443"
+
+  NetworkAclEntryOutPrivateAllowEphemeral1:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      RuleNumber: 220
+      Protocol: 6
+      RuleAction: allow
+      Egress: true
+      CidrBlock: "10.255.0.0/16"
+      PortRange:
+        From: "1024"
+        To: "65535"
+
+  NetworkAclEntryOutPrivateAllowEphemeral2:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      RuleNumber: 230
+      Protocol: 6
+      RuleAction: allow
+      Egress: true
+      CidrBlock: "10.176.162.0/24"
+      PortRange:
+        From: "1024"
+        To: "65535"
+
+  NetworkAclEntryOutPrivateAllowSSH:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      RuleNumber: 250
+      Protocol: 6
+      RuleAction: allow
+      Egress: true
+      CidrBlock: "0.0.0.0/0"
+      # Required for jenkins to github
+      PortRange:
+        From: "22"
+        To: "22"

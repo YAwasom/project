@@ -1,0 +1,29 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: efd roles and policies for RDS
+
+Parameters:
+  Environment:
+    Description: RDS Role
+    Type: String
+
+Resources:
+  RDSMonitoringRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole'
+      AssumeRolePolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 'monitoring.rds.amazonaws.com'
+            Action: 'sts:AssumeRole'
+Outputs:
+  RDSRoleArn:
+    Description: RDS role arn
+    Value: !GetAtt RDSMonitoringRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-${AWS::Region}-arn"

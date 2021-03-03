@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "External vendor access to content now non prod live search"
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+    Default: dev
+
+Resources:
+  LiveSearchVendorAssumeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-${AWS::Region}"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                # aws-oscs-dofri-devqa
+                - "arn:aws:iam::921590218431:root"
+                # Dalet
+                - "arn:aws:iam::559928269788:root"
+                # WB Redemption
+                - "arn:aws:iam::492664463846:root"
+                # EFD - publish dev
+                - "arn:aws:iam::656419642964:root"                
+                # Dofri
+                - "arn:aws:iam::441792793185:root"
+                # SVC Gator Sky
+                - "arn:aws:iam::656419642964:root"                
+                # Nest
+                - "arn:aws:iam::147180035125:root"                
+                # Nest prod
+                - "arn:aws:iam::507416135429:root"
+              Service:
+                - apigateway.amazonaws.com
+            Action: ["sts:AssumeRole"]
+      Path: /
+      Policies:
+        - PolicyName: "wb-cn-live-search-non-prod-vendor-role"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: search
+                Effect: Allow
+                Action: execute-api:Invoke
+                Resource:
+                  # To migrate away from
+                  - arn:aws:execute-api:us-west-2:*:izem5u1gx3/1/GET/search
+                  - arn:aws:execute-api:us-west-2:*:izem5u1gx3/1/POST/search
+                  - arn:aws:execute-api:us-west-2:*:bsv95oqmjf/1/GET/search
+                  - arn:aws:execute-api:us-west-2:*:bsv95oqmjf/1/POST/search                  
+                  # new
+                  - arn:aws:execute-api:us-west-2:*:ljav95cvee/1/GET/search
+                  - arn:aws:execute-api:us-west-2:*:ljav95cvee/1/POST/search                  
+                  - arn:aws:execute-api:us-west-2:*:b2t98uv4xg/1/GET/search
+                  - arn:aws:execute-api:us-west-2:*:b2t98uv4xg/1/POST/search
+                  - arn:aws:execute-api:us-west-2:*:o3ltckwyuh/1/GET/search
+                  - arn:aws:execute-api:us-west-2:*:o3ltckwyuh/1/POST/search
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-${AWS::Region}"        
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  LiveSearchVendorAssumeRoleArn:
+    Description: content now live search assume role arn
+    Value: !GetAtt LiveSearchVendorAssumeRole.Arn
+    Export:
+      # wb-cn-live-search-non-prod-vendor-role-us-west-2-arn
+      Name: !Sub "${AWS::StackName}-${AWS::Region}-arn"

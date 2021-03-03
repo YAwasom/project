@@ -1,0 +1,36 @@
+---
+- isMultiBranch: true
+  projectName: wm-ott-packager
+  url: git@github.com:wm-msc-malt/wm-ott-packager.git
+  description: wm ott packager
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: WM Ott Packager
+  viewRegex: ((.*)wm-ott-packager(.*))
+  scmScanInterval: 5m
+  includes: development staging master
+
+- isMultiBranch: false
+  projectName: wm-ott-packager-infra-dev
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: wm ott packager infra
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: WM Ott Packager
+  viewRegex: ((.*)wm-ott-packager(.*))
+  scriptPath: ott-packager/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: wm-ott-packager-infra-prod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: master
+  description: wm ott packager infra
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: WM Ott Packager
+  viewRegex: ((.*)wm-ott-packager(.*))
+  scriptPath: ott-packager/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true

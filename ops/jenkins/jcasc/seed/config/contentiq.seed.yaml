@@ -1,0 +1,64 @@
+---
+- isMultiBranch: true
+  projectName: contentiq-ui
+  url: git@github.com:wm-msc-malt/content-iq-data-governance.git
+  description: contentiq-ui
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Content IQ
+  viewRegex: ((.*)contentiq(.*))
+  scmScanInterval: 5m
+  includes: master qa prod
+
+- isMultiBranch: true
+  projectName: contentiq-auth-userpool
+  url: git@github.com:wm-msc-malt/contentiq-infra.git
+  description: contentiq-auth-userpool
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Content IQ
+  viewRegex: ((.*)contentiq(.*))
+  scriptPath: jenkins/auth-userpool.Jenkinsfile
+  scmScanInterval: 5m
+  includes: master qa prod
+
+- isMultiBranch: true
+  projectName: contentiq-auth-identitypool
+  url: git@github.com:wm-msc-malt/contentiq-infra.git
+  description: contentiq-auth-identitypool
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Content IQ
+  viewRegex: ((.*)contentiq(.*))
+  scriptPath: jenkins/auth-identitypool.Jenkinsfile
+  scmScanInterval: 5m
+  includes: master qa prod
+
+- isMultiBranch: true
+  projectName: contentiq-api
+  url: git@github.com:wm-msc-malt/contentiq-infra.git
+  description: contentiq-api
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Content IQ
+  viewRegex: ((.*)contentiq(.*))
+  scriptPath: jenkins/api.Jenkinsfile
+  scmScanInterval: 5m
+  includes: master qa prod
+
+- isMultiBranch: true
+  projectName: contentiq-web-host
+  url: git@github.com:wm-msc-malt/contentiq-infra.git
+  description: contentiq-web-host
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Content IQ
+  viewRegex: ((.*)contentiq(.*))
+  scriptPath: jenkins/web-host.Jenkinsfile
+  scmScanInterval: 5m
+  includes: master qa prod
+
+- isMultiBranch: true
+  projectName: localization-ui
+  url: git@github.com:wm-msc-malt/dubcard-ui.git
+  description: localization-ui
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Localization
+  viewRegex: ((.*)localization(.*))
+  scmScanInterval: 5m
+  includes: master qa prod

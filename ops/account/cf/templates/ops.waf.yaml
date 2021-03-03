@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: ops waf
+
+Resources:
+  ManagedAWSWebACL:
+      Type: AWS::WAFv2::WebACL
+      Properties:
+        Name: !Sub "${AWS::StackName}-aws-common-web-acl"
+        Scope: REGIONAL
+        Description: "compliant with cso guidelines specified in baseline for web application firewalls at one.warnermedia.com"
+        DefaultAction:
+          Allow: {}
+        VisibilityConfig:
+          SampledRequestsEnabled: true
+          CloudWatchMetricsEnabled: true
+          MetricName: !Sub "${AWS::StackName}-aws-common-web-acl-metric"
+        Rules:
+          - Name: RulesAWSManagedCommonRuleSet
+            Priority: 0
+            OverrideAction:
+              Count: {}
+            VisibilityConfig:
+              SampledRequestsEnabled: true
+              CloudWatchMetricsEnabled: true
+              MetricName: AWSManagedRulesCommonRuleSetMetric
+            Statement:
+              ManagedRuleGroupStatement:
+                VendorName: AWS
+                Name: AWSManagedRulesCommonRuleSet
+                ExcludedRules: []
+          - Name: RulesAWSManagedSQLiRuleSet
+            Priority: 1
+            OverrideAction:
+              Count: {}
+            VisibilityConfig:
+              SampledRequestsEnabled: true
+              CloudWatchMetricsEnabled: true
+              MetricName: AWSManagedRulesSQLiRuleSetMetric
+            Statement:
+              ManagedRuleGroupStatement:
+                VendorName: AWS
+                Name: AWSManagedRulesSQLiRuleSet
+                ExcludedRules: []          
+          - Name: RulesAWSManagedAdminProtectionRuleSet
+            Priority: 2
+            OverrideAction:
+              Count: {}
+            VisibilityConfig:
+              SampledRequestsEnabled: true
+              CloudWatchMetricsEnabled: true
+              MetricName: AWSManagedRulesAdminProtectionRuleSetMetric
+            Statement:
+              ManagedRuleGroupStatement:
+                VendorName: AWS
+                Name: AWSManagedRulesAdminProtectionRuleSet
+                ExcludedRules: []          
+          - Name: RulesAWSManagedKnownBadInputsRuleSet
+            Priority: 3
+            OverrideAction:
+              Count: {}
+            VisibilityConfig:
+              SampledRequestsEnabled: true
+              CloudWatchMetricsEnabled: true
+              MetricName: AWSManagedRulesKnownBadInputsRuleSetMetric
+            Statement:
+              ManagedRuleGroupStatement:
+                VendorName: AWS
+                Name: AWSManagedRulesKnownBadInputsRuleSet
+                ExcludedRules: []  
+          - Name: RulesAWSManagedLinuxRuleSet
+            Priority: 4
+            OverrideAction:
+              Count: {}
+            VisibilityConfig:
+              SampledRequestsEnabled: true
+              CloudWatchMetricsEnabled: true
+              MetricName: AWSManagedRulesLinuxRuleSetMetric
+            Statement:
+              ManagedRuleGroupStatement:
+                VendorName: AWS
+                Name: AWSManagedRulesLinuxRuleSet
+                ExcludedRules: []     
+          - Name: RulesAWSManagedAnonymousIpList 
+            Priority: 5
+            OverrideAction:
+              Count: {}
+            VisibilityConfig:
+              SampledRequestsEnabled: true
+              CloudWatchMetricsEnabled: true
+              MetricName: AWSManagedRulesAnonymousIpListMetric
+            Statement:
+              ManagedRuleGroupStatement:
+                VendorName: AWS
+                Name: AWSManagedRulesAnonymousIpList 
+                ExcludedRules: []          
+          - Name: AWSManagedRulesAmazonIpReputationList 
+            Priority: 6
+            OverrideAction:
+              Count: {}
+            VisibilityConfig:
+              SampledRequestsEnabled: true
+              CloudWatchMetricsEnabled: true
+              MetricName: AWSManagedRulesAmazonIpReputationListMetric
+            Statement:
+              ManagedRuleGroupStatement:
+                VendorName: AWS
+                Name: AWSManagedRulesAmazonIpReputationList
+                ExcludedRules: []        
+        Tags:
+          - Key: Name
+            Value: !Sub "${AWS::StackName}-aws-common-web-acl"
+          - Key: Environment
+            Value: ops     
+
+Outputs:
+  ManagedAWSWebACL:
+    Description: "AWS Managed Common Rule Sets"
+    Value: !Ref ManagedAWSWebACL
+    Export:
+      Name: !Sub ${AWS::StackName}-aws-common-web-acl

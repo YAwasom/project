@@ -1,0 +1,88 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: efd sns
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+
+  SubscriptionEndPoint:
+    Type: String
+    Default: WB.CloudOps@accenture.com
+
+  SubscriptionProtocol:
+    Type: String
+    AllowedValues:
+      - http
+      - https
+      - email
+      - email-json
+      - sms
+      - sqs
+      - application
+      - lambda
+    Default: email
+
+Resources:
+  SNSTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-service-monitoring"
+
+  SNSSubscription:
+    Type: "AWS::SNS::Subscription"
+    Properties:
+      Endpoint: !Ref SubscriptionEndPoint
+      Protocol: !Ref SubscriptionProtocol
+      TopicArn: !Ref SNSTopic
+
+  NotificationTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      Subscription:
+        - Endpoint: !Ref SubscriptionEndPoint
+          Protocol: email
+
+  NotificationTopicSurly:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      Subscription:
+        - Endpoint: !Ref SubscriptionEndPoint
+          Protocol: email
+  NotificationTopicFlux:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      Subscription:
+        - Endpoint: !Ref SubscriptionEndPoint
+          Protocol: email
+
+Outputs:
+  SNSTopic:
+    Description: efd service monitoring topic
+    Value: !Ref SNSTopic
+    Export:
+      # efd-dev-sns-service-monitoring
+      Name: !Sub "${AWS::StackName}-service-monitoring"
+
+  NotificationTopic:
+    Description: efd notification topic
+    Value: !Ref NotificationTopic
+    Export:
+      # efd-dev-sns-notification
+      Name: !Sub "${AWS::StackName}-notification"
+
+  NotificationTopicSurly:
+    Description: efd surly notification topic
+    Value: !Ref NotificationTopicSurly
+    Export:
+      # efd-dev-sns-surly-notification
+      Name: !Sub "${AWS::StackName}-surly-notification"
+
+  NotificationTopicFlux:
+    Description: efd surly notification topic
+    Value: !Ref NotificationTopicFlux
+    Export:
+      # efd-dev-sns-surly-notification
+      Name: !Sub "${AWS::StackName}-flux-notification"

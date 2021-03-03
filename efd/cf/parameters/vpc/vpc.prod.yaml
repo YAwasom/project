@@ -1,0 +1,8 @@
+Environment: prod
+CIDRPublicA: 10.176.237.0/27
+CIDRPrivateA: 10.176.237.32/27	
+CIDRPrivateB: 10.176.237.64/27	
+CIDRPrivateC: 10.176.237.96/27	
+CIDRVpc: 10.176.237.0/24
+ProjectName: wbts-efd-prod
+

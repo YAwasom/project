@@ -1,0 +1,98 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: ops nexus kms keys
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: "String"
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+Resources:
+  NexusRepoS3KmsKey:
+    Type: "AWS::KMS::Key"
+    Properties:
+      Description: kms key nexus configurations s3 bucket
+      EnableKeyRotation: true
+      KeyPolicy:
+        Id: !Sub "${AWS::StackName}-s3-repo"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of this key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+      Tags:
+        - Key: "Name"
+          # wb-cmd-ops-kms-nexus-s3-repo
+          Value: !Sub "${AWS::StackName}-s3-repo"        
+        - Key: "Environment"
+          Value: !Ref Environment
+
+
+  NexusRepoS3KmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${AWS::StackName}-s3-repo"
+      TargetKeyId: !Ref NexusRepoS3KmsKey
+
+Outputs:
+  NexusOpsKmsKeyAlias:
+    Description: "ops nexus repo s3 kms alias"
+    Value: !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:${NexusRepoS3KmsKeyAlias}"
+    Export:
+      # wb-cmd-ops-kms-nexus-s3-repo-alias
+      Name: !Sub "${AWS::StackName}-s3-repo-alias"

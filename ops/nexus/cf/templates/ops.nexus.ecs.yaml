@@ -1,0 +1,604 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ops nexus on ecs with alb
+Parameters:
+  Environment:
+    Description: The environment in which Nexus is deployed
+    Type: String
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+  WbNetworkCidr:
+    Description: Warner Bros corp network cidr to whitelist
+    Type: String
+    Default: 168.161.192.0/21
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  WbNetworkWestCoastCidr:
+    Description: CIDR of Internal WB Network West Coast
+    Type: String
+    Default: 168.161.18.0/21
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  WbNetworkEastCoastCidr:
+    Description: CIDR of Internal WB Network East Coast
+    Type: String
+    Default: 168.161.22.0/21
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  WbNetworkLondonCidr:
+    Description: CIDR of Internal WB Network London
+    Type: String
+    Default: 168.161.200.0/21
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  # EC2
+  # t2.xlarge	4 vCPU	GiB  16	EBS-Only	Moderate Network
+  # t2.2xlarge 8 vCPU	GiB  32	EBS-Only	Moderate Network
+  InstanceType:
+    Description: EC2 instance type for ecs, please avoid nitro based systems for now
+    Type: String
+    Default: t2.xlarge
+    AllowedValues:
+      - t2.xlarge
+      - t2.2xlarge
+    ConstraintDescription: Must be a valid EC2 instance type.
+
+  # NEXUS
+  NexusDNSName:
+    Description: Nexus Alias for the ELB.
+    Type: String
+    Default: nexus.cmd-ops.warnerbros.com
+
+  # EBS & EFS
+  EFSMountPoint:
+    Description: The Linux mount point for the EFS volume
+    Type: String
+    MinLength: 5
+    MaxLength: 20
+    Default: nexus-efs
+
+  EBSBlockDeviceName:
+    Description: EBS block device for auto scale group
+    Type: String
+    MinLength: 5
+    MaxLength: 15
+    Default: /dev/xvdcz
+
+  EcsOptimizedAmi:
+    # e.g. public image amzn2-ami-ecs-hvm-2.0.20190301-x86_64-ebs
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /ops/ami/recommended/ecs
+
+Resources:
+  NexusSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "SecurityGroup for Nexus instances: master and slaves"
+      VpcId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-id"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8081
+          ToPort: 8091
+          SourceSecurityGroupId: !Ref "NexusALBSecurityGroup"
+          Description: "Allow traffic the nexus alb"
+
+  NexusALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SecurityGroup for Nexus ELB
+      VpcId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-id"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          Description: "Allow traffic from wb network"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref WbNetworkCidr
+        - IpProtocol: tcp
+          Description: "Allow traffic from wb network west coast"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref WbNetworkWestCoastCidr
+        - IpProtocol: tcp
+          Description: "Allow traffic from wb network east coast"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref WbNetworkEastCoastCidr
+        - IpProtocol: tcp
+          Description: "Allow traffic from wb network london"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref WbNetworkLondonCidr
+        - IpProtocol: tcp
+          Description: "Allow traffic from ops nat"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "54.203.50.148/32"
+        - IpProtocol: tcp
+          Description: "Allow traffic from ops nat"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "52.41.104.215/32"
+        - IpProtocol: tcp
+          Description: "Allow traffic from ops nat"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "34.218.144.153/32"
+        - IpProtocol: tcp
+          Description: "Allow traffic from cn bto jenkins"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "54.70.242.238/32"
+        - IpProtocol: tcp
+          Description: "Allow traffic from cn nuxeo"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "54.214.165.228/32"
+        - IpProtocol: tcp
+          Description: "Allow traffic from cn nuxeo prod"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "54.203.209.227/32"
+        - IpProtocol: tcp
+          Description: "Allow traffic from cn nuxeo prod"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "54.212.207.118/32"
+        - IpProtocol: tcp
+          Description: "Allow traffic from cn nuxeo prod"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "52.43.205.73/32"
+
+  NexusSecurityGroupAlbInbound:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref NexusSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8081
+      ToPort: 8091
+      SourceSecurityGroupId: !Ref NexusALBSecurityGroup
+
+  EFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for EFS mount target
+      VpcId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-id"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 2049
+          ToPort: 2049
+          # TODO FIX THIS
+          CidrIp: "10.255.0.0/16"
+
+  ECSServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: ecs-service
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
+                  - elasticloadbalancing:DeregisterTargets
+                  - elasticloadbalancing:Describe*
+                  - elasticloadbalancing:RegisterInstancesWithLoadBalancer
+                  - elasticloadbalancing:RegisterTargets
+                  - ec2:Describe*
+                  - ec2:AuthorizeSecurityGroupIngress
+                Resource: "*"
+
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+                - ssm.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+      Path: /
+      Policies:
+        - PolicyName: ecs-service
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:*
+                  - elasticloadbalancing:Describe*
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:GetAuthorizationToken
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - autoscaling:DescribeAutoScalingInstances
+                  - autoscaling:SetInstanceProtection
+                  - autoscaling:TerminateInstanceInAutoScalingGroup
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                  - s3:GetLifecycleConfiguration
+                  - s3:PutLifecycleConfiguration
+                  - s3:PutObjectTagging
+                  - s3:GetObjectTagging
+                  - s3:DeleteObjectTagging
+                  - s3:DeleteBucket
+                  - s3:CreateBucket
+                  - s3:GetBucketAcl
+                Resource:
+                  - !Sub "arn:aws:s3:::wb-cmd-${Environment}-s3-nexus-repo"
+                  - !Sub "arn:aws:s3:::wb-cmd-${Environment}-s3-nexus-repo/*"
+              - Effect: Allow
+                Action:
+                  - kms:Encrypt
+                  - kms:Decrypt
+                  - kms:ReEncrypt*
+                  - kms:GenerateDataKey*
+                  - kms:DescribeKey
+                Resource:
+                  - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/feda9bfc-2860-4d7d-bb68-eafdb98c8877"
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                  - ssm:GetParametersByPath
+                Resource:
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/com/warnerbros/cmd/${Environment}/nexus/*"
+
+  NexusECSInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref "EC2Role"
+
+  NexusEFS:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      PerformanceMode: generalPurpose
+      ThroughputMode: provisioned
+      ProvisionedThroughputInMibps: 20
+      LifecyclePolicies:
+        - TransitionToIA: AFTER_30_DAYS
+      Encrypted: true
+      FileSystemTags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-efs"
+
+  MountTargetA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref NexusEFS
+      SubnetId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-private-subnet-a"
+      SecurityGroups:
+        - !Ref "EFSSecurityGroup"
+
+  MountTargetB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref "NexusEFS"
+      SubnetId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-private-subnet-b"
+      SecurityGroups:
+        - !Ref "EFSSecurityGroup"
+
+  NexusALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${AWS::StackName}-alb"
+      Scheme: internet-facing
+      Subnets:
+        - Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-public-subnet-a"
+        - Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-public-subnet-b"
+      SecurityGroups:
+        - !Ref NexusALBSecurityGroup
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: "30"
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${AWS::StackName}-alb"
+
+  NexusTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${AWS::StackName}-tg"
+      VpcId:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-id"
+      Port: 8081
+      Protocol: HTTP
+      HealthCheckIntervalSeconds: 20
+      HealthCheckPath: /
+      HealthCheckPort: "8081"
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
+
+  NexusALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-2016-08
+      LoadBalancerArn: !Ref NexusALB
+      Certificates:
+        - CertificateArn: !Sub "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/9bea221f-b846-4042-aaa5-c616f2e15c67"
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            ContentType: "text/plain"
+            MessageBody: "Warner Bros CMD Nexus"
+            StatusCode: "200"
+
+  NexusALBListenerRule:
+    Type: "AWS::ElasticLoadBalancingV2::ListenerRule"
+    Properties:
+      ListenerArn: !Ref NexusALBListener
+      Priority: 80
+      Conditions:
+        - Field: host-header
+          Values:
+            - !Ref NexusDNSName
+      Actions:
+        - TargetGroupArn: !Ref NexusTargetGroup
+          Type: forward
+
+  NexusCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${AWS::StackName}-cluster"
+
+  NexusCloudwatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${AWS::StackName}-log"
+      RetentionInDays: 7
+
+  NexusTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub "${AWS::StackName}"
+      NetworkMode: bridge
+      Volumes:
+        - Host:
+            SourcePath: !Sub "/${EFSMountPoint}/docker-user/nexus"
+          Name: !Sub "${EFSMountPoint}"
+        - Host:
+            SourcePath: /var/run/docker.sock
+          Name: docker
+      ContainerDefinitions:
+        - Name: !Sub "${AWS::StackName}"
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/cmd/nexus"
+          MountPoints:
+            - SourceVolume: !Sub "${EFSMountPoint}"
+              ContainerPath: /nexus-data
+              ReadOnly: false
+            - SourceVolume: docker
+              ContainerPath: /var/run/docker.sock
+          Essential: true
+          Cpu: 2048
+          Memory: 8192
+          MemoryReservation: 4096
+          # https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Ulimit.html
+          # https://help.sonatype.com/repomanager3/system-requirements#SystemRequirements-AdequateFileHandleLimits
+          Ulimits:
+            - Name: nofile
+              SoftLimit: 4096
+              HardLimit: 65536
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref "NexusCloudwatchLogGroup"
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: !Sub "${AWS::StackName}-log"
+          PortMappings:
+            - HostPort: 8081
+              ContainerPort: 8081
+              Protocol: tcp
+          Environment:
+            - Name: NEXUS_HOST_URL
+              Value: !Sub "https://${NexusDNSName}"
+            # run as this user (docker-user)
+            - Name: LOCAL_USER_ID
+              Value: "5001"
+            # efs group
+            - Name: LOCAL_USER_GID
+              Value: "555"
+            # https://hub.docker.com/r/sonatype/nexus3/
+            # https://help.sonatype.com/repomanager3/system-requirements#SystemRequirements-Memory
+            - Name: INSTALL4J_ADD_VM_PARAMS
+              Value: "-Xms6g -Xmx6g"
+            - Name: AWS_REGION
+              Value: !Ref "AWS::Region"
+            - Name: AWS_ACCOUNT_ID
+              Value: !Ref "AWS::AccountId"
+
+  NexusECSService:
+    DependsOn: NexusALBListener
+    Type: AWS::ECS::Service
+    Properties:
+      DesiredCount: 1
+      Cluster: !Sub "${AWS::StackName}-cluster"
+      ServiceName: !Sub "${AWS::StackName}"
+      TaskDefinition: !Ref "NexusTaskDefinition"
+      Role: !Ref "ECSServiceRole"
+      LoadBalancers:
+        - TargetGroupArn: !Ref NexusTargetGroup
+          ContainerPort: 8081
+          ContainerName: !Sub "${AWS::StackName}"
+
+  NexusECSLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      AssociatePublicIpAddress: false
+      ImageId: !Ref EcsOptimizedAmi
+      IamInstanceProfile: !Ref "NexusECSInstanceProfile"
+      InstanceType: !Ref "InstanceType"
+      KeyName: "wb-cmd-ops-nexus"
+      SecurityGroups:
+        - !Ref "NexusSecurityGroup"
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvda"
+          Ebs:
+            DeleteOnTermination: true
+            VolumeType: gp2
+            VolumeSize: 30
+            Encrypted: true
+        - DeviceName: !Sub ${EBSBlockDeviceName}
+          Ebs:
+            Encrypted: true
+            VolumeSize: 100
+            DeleteOnTermination: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -e
+          # Debug logging for userdata
+          # Logs can be found at /var/log/user-data.log
+          exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+          # Configure ecs cluster
+          cat <<'EOF' >> /etc/ecs/ecs.config
+          #!/bin/bash
+          ECS_CLUSTER=${AWS::StackName}-cluster
+          ECS_IMAGE_MINIMUM_CLEANUP_AGE=10m
+          ECS_ENGINE_TASK_CLEANUP_WAIT_DURATION=30m
+          ECS_NUM_IMAGES_DELETE_PER_CYCLE=100
+          EOF
+
+          instance_id=$(ec2-metadata -i | cut -d " " -f 2)
+          ec2_hostname="${AWS::StackName}"
+          hostnamectl set-hostname $ec2_hostname-$instance_id
+
+          # Stop docker & ecs agent before mounting to /var/lib/docker
+          service docker stop
+
+          # Setup for legacy docker-storage-setup
+          # Mount /var/lib/docker onto the ebs volume ${EBSBlockDeviceName}
+          cat >/etc/sysconfig/docker-storage-setup <<EOL
+          # Edit this file to override any configuration options specified in
+          # /usr/lib/docker-storage-setup/docker-storage-setup.
+          # For more details refer to "man docker-storage-setup"
+          STORAGE_DRIVER="overlay2"
+          DEVS=${EBSBlockDeviceName}
+          VG="docker-vg"
+          DATA_SIZE=80%FREE
+          AUTO_EXTEND_POOL=yes
+          LV_ERROR_WHEN_FULL=yes
+          CONTAINER_ROOT_LV_NAME="docker-root-lv"
+          CONTAINER_ROOT_LV_SIZE="100%FREE"
+          CONTAINER_ROOT_LV_MOUNT_PATH="/var/lib/docker"
+          EOL
+
+          # Install tools for mounting ebs & efs
+          # https://docs.aws.amazon.com/efs/latest/ug/using-amazon-efs-utils.html
+          # https://www.sourceware.org/lvm2/
+          yum install -y amazon-efs-utils lvm2 telnet jq aws-cli aws-cfn-bootstrap
+
+          # Install bootstrap, logs, and ssm agent
+          yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+          rpm -Uvh https://s3.amazonaws.com/amazoncloudwatch-agent/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm
+
+          # Configure docker via container-storage-setup
+          cd /usr/local/src/
+          curl -OL https://github.com/projectatomic/container-storage-setup/archive/v0.6.0.tar.gz
+          mv v0.6.0.tar.gz container-storage-setup-0.6.0.tar.gz
+          tar -xvf container-storage-setup-0.6.0.tar.gz
+          cd container-storage-setup-0.6.0 && make install
+          container-storage-setup
+
+          # Restart docker and ecs agent
+          systemctl daemon-reload
+          service docker start
+          /usr/libexec/amazon-ecs-init pre-start
+          /usr/libexec/amazon-ecs-init start &
+
+          # Mount EFS
+          # TODO Test mount after restart of master instance.
+          # Deletion will simply remount which already works.
+          mkdir -p /${EFSMountPoint}
+          sudo mount -t efs ${NexusEFS}:/ /${EFSMountPoint}
+          echo "${NexusEFS}:/ /${EFSMountPoint} efs tls,_netdev" >> /etc/fstab
+          sudo chown 1000 /${EFSMountPoint}
+
+  NexusECSAutoScaling:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn:
+      - MountTargetA
+      - MountTargetB
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: 0
+        MaxBatchSize: 1
+        PauseTime: "PT90S"
+        SuspendProcesses:
+          - HealthCheck
+          - ReplaceUnhealthy
+          - AZRebalance
+          - AlarmNotification
+          - ScheduledActions
+    Properties:
+      AutoScalingGroupName: !Sub "${AWS::StackName}-asg"
+      LaunchConfigurationName: !Ref "NexusECSLaunchConfiguration"
+      TargetGroupARNs:
+        - !Ref NexusTargetGroup
+      MinSize: "1"
+      MaxSize: "1"
+      DesiredCapacity: "1"
+      HealthCheckType: EC2
+      HealthCheckGracePeriod: 400
+      VPCZoneIdentifier:
+        - Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-private-subnet-a"
+        - Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-private-subnet-b"
+      AvailabilityZones:
+        - Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-az-a"
+        - Fn::ImportValue: !Sub "wb-cmd-${Environment}-vpc-az-b"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}"
+          PropagateAtLaunch: true
+
+Outputs:
+  NexusAlbDnsName:
+    Description: Nexus ecs alb dns name
+    Value: !GetAtt "NexusALB.DNSName"
+    Export:
+      # wb-cmd-ops-ecs-nexus-alb-dns-name
+      Name: !Sub "${AWS::StackName}-alb-dns-name"
+
+  NexusAlbHostedZoneID:
+    Description: Nexus ecs alb hosted zone id
+    Value: !GetAtt "NexusALB.CanonicalHostedZoneID"
+    Export:
+      # wb-cmd-ops-ecs-nexus-alb-hosted-zone-id
+      Name: !Sub "${AWS::StackName}-alb-hosted-zone-id"

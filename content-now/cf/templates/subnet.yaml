@@ -1,0 +1,341 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "VPC: contentnow VPC and networking"
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+
+  ParentStackName:
+    Description: Stack name of the parent vpc
+    Type: String
+
+Resources:
+  PublicSubnetA:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: "10.0.96.0/23"
+      MapPublicIpOnLaunch: true
+      VpcId:
+        Fn::ImportValue: !Sub "${ParentStackName}-VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-subnet-a"
+        - Key: Reach
+          Value: public
+        - Key: Environment
+          Value: !Ref Environment
+
+  PublicSubnetB:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: "10.0.98.0/23"
+      MapPublicIpOnLaunch: true
+      VpcId:
+        Fn::ImportValue: !Sub "${ParentStackName}-VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-subnet-b"
+        - Key: Reach
+          Value: public
+        - Key: Environment
+          Value: !Ref Environment
+
+  PrivateSubnetA:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: "10.0.92.0/23"
+      VpcId:
+        Fn::ImportValue: !Sub "${ParentStackName}-VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-private-subnet-a"
+        - Key: Reach
+          Value: private
+        - Key: Environment
+          Value: !Ref Environment
+
+  PrivateSubnetB:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: "10.0.94.0/23"
+      VpcId:
+        Fn::ImportValue: !Sub "${ParentStackName}-VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-private-subnet-b"
+        - Key: Reach
+          Value: private
+        - Key: Environment
+          Value: !Ref Environment
+
+  PublicRouteTableA:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub "${ParentStackName}-VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-rt-a"
+
+  PublicRouteTableB:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub "${ParentStackName}-VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-rt-b"
+
+  PrivateRouteTableA:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub "${ParentStackName}-VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-private-rt-a"
+
+  PrivateRouteTableB:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub "${ParentStackName}-VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-private-rt-b"
+
+  PublicRouteTableAssociationA:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTableA
+
+  PublicRouteTableAssociationB:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTableB
+
+  PrivateRouteTableAssociationA:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRouteTableA
+
+  PrivateRouteTableAssociationB:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnetB
+      RouteTableId: !Ref PrivateRouteTableA
+
+  RouteTablePublicInternetRouteA:
+    Type: "AWS::EC2::Route"
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId:
+        Fn::ImportValue: !Sub "${ParentStackName}-IG"
+
+  RouteTablePublicInternetRouteB:
+    Type: "AWS::EC2::Route"
+    Properties:
+      RouteTableId: !Ref PublicRouteTableB
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId:
+        Fn::ImportValue: !Sub "${ParentStackName}-IG"
+
+  # NACL
+  NetworkAclPublic:
+    Type: "AWS::EC2::NetworkAcl"
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub "${ParentStackName}-VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-acl"
+
+  NetworkAclPrivate:
+    Type: "AWS::EC2::NetworkAcl"
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub "${ParentStackName}-VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-private-acl"
+
+  PublicSubnetNetworkAclAssociationA:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      NetworkAclId: !Ref NetworkAclPublic
+
+  PublicSubnetNetworkAclAssociationB:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      NetworkAclId: !Ref NetworkAclPublic
+
+  SubnetNetworkAclAssociationAPrivate:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      NetworkAclId: !Ref NetworkAclPrivate
+
+  SubnetNetworkAclAssociationBPrivate:
+    Type: "AWS::EC2::SubnetNetworkAclAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnetB
+      NetworkAclId: !Ref NetworkAclPrivate
+
+  NetworkAclEntryInPublicAllowAll:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref NetworkAclPublic
+      RuleNumber: 99
+      Protocol: -1
+      RuleAction: allow
+      Egress: false
+      CidrBlock: "0.0.0.0/0"
+
+  NetworkAclEntryOutPublicAllowAll:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref NetworkAclPublic
+      RuleNumber: 99
+      Protocol: -1
+      RuleAction: allow
+      Egress: true
+      CidrBlock: "0.0.0.0/0"
+
+  NetworkAclEntryInPrivateAllowVPC:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 99
+      Protocol: -1
+      RuleAction: allow
+      Egress: false
+      CidrBlock: "0.0.0.0/0"
+
+  NetworkAclEntryOutPrivateAllowVPC:
+    Type: "AWS::EC2::NetworkAclEntry"
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      RuleNumber: 99
+      Protocol: -1
+      RuleAction: allow
+      Egress: true
+      CidrBlock: "0.0.0.0/0"
+
+  # NAT gateway
+  EIPA:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  EIPB:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NatA:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - EIPA
+          - AllocationId
+      SubnetId: !Ref PublicSubnetA
+
+  NatB:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - EIPB
+          - AllocationId
+      SubnetId: !Ref PublicSubnetB
+
+  NatARoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatA
+
+  NatBRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableB
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatB
+
+Outputs:
+  PublicRouteTableA:
+    Description: Public route table
+    Value: !Ref PublicRouteTableA
+    Export:
+      Name: !Sub "${AWS::StackName}-rt-public"
+
+  PrivateRouteTableA:
+    Description: Private route table
+    Value: !Ref PrivateRouteTableA
+    Export:
+      Name: !Sub "${AWS::StackName}-rt-private"
+
+  SubnetsPublic:
+    Description: Public subnets
+    Value: !Join [",", [!Ref PublicSubnetA, !Ref PublicSubnetB]]
+    Export:
+      Name: !Sub "${AWS::StackName}-public-list"
+
+  SubnetsPrivate:
+    Description: Private subnets
+    Value: !Join [",", [!Ref PrivateSubnetA, !Ref PrivateSubnetB]]
+    Export:
+      Name: !Sub "${AWS::StackName}-private-list"
+
+  PublicSubnetA:
+    Description: Public subnet a
+    Value: !Ref PublicSubnetA
+    Export:
+      Name: !Sub "${AWS::StackName}-public-a"
+
+  PublicSubnetB:
+    Description: Public subnet b
+    Value: !Ref PublicSubnetB
+    Export:
+      Name: !Sub "${AWS::StackName}-public-b"
+
+  PrivateSubnetA:
+    Description: Private subnet a
+    Value: !Ref PrivateSubnetA
+    Export:
+      Name: !Sub "${AWS::StackName}-private-a"
+
+  PrivateSubnetB:
+    Description: Private subnet b
+    Value: !Ref PrivateSubnetB
+    Export:
+      Name: !Sub "${AWS::StackName}-private-b"
+
+  NatA:
+    Description: NAT Gateway
+    Value: !Ref NatA
+    Export:
+      Name: !Sub "${AWS::StackName}-nat-a"
+
+  NatB:
+    Description: NAT Gateway
+    Value: !Ref NatB
+    Export:
+      Name: !Sub "${AWS::StackName}-nat-b"

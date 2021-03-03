@@ -1,0 +1,132 @@
+---
+- isMultiBranch: true
+  projectName: atom-feed-api
+  url: git@github.com:wm-msc-malt/atom-feed.git
+  description: atom-feed-api
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Atom
+  viewRegex: ((.*)atom(.*))
+  scmScanInterval: "5m"
+  scriptPath: Jenkinsfile
+  includes: develop master qa stage
+
+- isMultiBranch: true
+  projectName: atom-cron-lambdas
+  url: git@github.com:wm-msc-malt/atom-failed-msgs-cron.git
+  description: atom-cron-lambdas
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Atom
+  viewRegex: ((.*)atom(.*))
+  scmScanInterval: "5m"
+  scriptPath: Jenkinsfile
+  includes: develop master qa stage
+
+- isMultiBranch: true
+  projectName: atom-feed-sqs-worker
+  url: git@github.com:wm-msc-malt/atom-feed-sqs-worker.git
+  description: atom-feed-sqs-worker
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Atom
+  viewRegex: ((.*)atom(.*))
+  scmScanInterval: "5m"
+  scriptPath: Jenkinsfile
+  includes: develop master qa stage
+
+- isMultiBranch: true
+  projectName: atom-input-forwarder-lambda
+  url: git@github.com:wm-msc-malt/atom-input-forwarder.git
+  description: atom-input-forwarder-lambda
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Atom
+  viewRegex: ((.*)atom(.*))
+  scmScanInterval: "5m"
+  scriptPath: Jenkinsfile
+  includes: develop master qa stage
+
+- isMultiBranch: true
+  projectName: atom-snowflake-archive-daily-export
+  url: git@github.com:wm-msc-malt/snowflake-lambda.git
+  description: atom-snowflake-archive-daily-export
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Atom
+  viewRegex: ((.*)atom(.*))
+  scmScanInterval: "5m"
+  scriptPath: snowflake-archive-daily-export/Jenkinsfile
+  includes: develop master
+
+- isMultiBranch: true
+  projectName: atom-snowflake-daily-export
+  url: git@github.com:wm-msc-malt/snowflake-lambda.git
+  description: atom-snowflake-daily-export
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Atom
+  viewRegex: ((.*)atom(.*))
+  scmScanInterval: "5m"
+  scriptPath: snowflake-daily-export/Jenkinsfile
+  includes: develop master
+
+- isMultiBranch: true
+  projectName: atom-snowflake-daily-ingestion
+  url: git@github.com:wm-msc-malt/snowflake-lambda.git
+  description: atom-snowflake-daily-ingestion
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Atom
+  viewRegex: ((.*)atom(.*))
+  scmScanInterval: "5m"
+  scriptPath: snowflake-daily-ingestion/Jenkinsfile
+  includes: develop master
+  
+- isMultiBranch: true
+  projectName: atom-snowflake-realtime-delete
+  url: git@github.com:wm-msc-malt/snowflake-lambda.git
+  description: atom-snowflake-realtime-delete
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Atom
+  viewRegex: ((.*)atom(.*))
+  scmScanInterval: "5m"
+  scriptPath: snowflake-realtime-delete/Jenkinsfile
+  includes: develop master
+
+- isMultiBranch: true
+  projectName: atom-snowflake-send-status-toSlack
+  url: git@github.com:wm-msc-malt/snowflake-lambda.git
+  description: atom-snowflake-send-status-toSlack
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Atom
+  viewRegex: ((.*)atom(.*))
+  scmScanInterval: "5m"
+  scriptPath: snowflake-send-status-toSlack/Jenkinsfile
+  includes: develop master
+
+- isMultiBranch: true
+  projectName: atom-snowflake-deletes
+  url: git@github.com:wm-msc-malt/snowflake-lambda.git
+  description: atom-snowflake-deletes
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Atom
+  viewRegex: ((.*)atom(.*))
+  scmScanInterval: "5m"
+  scriptPath: snowflake-deletes/Jenkinsfile
+  includes: develop master
+
+- isMultiBranch: true
+  projectName: atom-jv-input-transform-lambda
+  url: git@github.com:wm-msc-malt/atom-jv-input-transform.git
+  description: atom-jv-input-transform-lambda
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Atom
+  viewRegex: ((.*)atom(.*))
+  scmScanInterval: "5m"
+  scriptPath: Jenkinsfile
+  includes: develop master qa stage
+
+- isMultiBranch: true
+  projectName: atom-inbound-dataloader
+  url: git@github.com:wm-msc-malt/atom-inbound-dataloader.git
+  description: atom-inbound-dataloader
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Atom
+  viewRegex: ((.*)atom(.*))
+  scmScanInterval: "5m"
+  scriptPath: Jenkinsfile
+  includes: develop master QA stage

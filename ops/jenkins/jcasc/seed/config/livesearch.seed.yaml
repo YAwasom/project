@@ -1,0 +1,50 @@
+---
+- isMultiBranch: true
+  projectName: live-search-core
+  url: git@github.com:wm-msc-malt/live-search-core.git
+  description: live search core
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: live-search-react
+  url: git@github.com:wm-msc-malt/livesearch-react.git
+  description: docker live search search api ui
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scmScanInterval: 5m
+  includes: development qa master
+
+- isMultiBranch: true
+  projectName: live-search-lambda
+  url: git@github.com:wm-msc-malt/live-search-lambda.git
+  description: live search lambda search api dev
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: logstash-etl
+  url: git@github.com:wm-msc-malt/logstash-etl.git
+  description: logstash etl
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scmScanInterval: 5m
+  includes: development QA master
+
+- isMultiBranch: true
+  projectName: live-search-etl
+  url: git@github.com:wm-msc-malt/live-search-etl.git
+  description: live search etl
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Live Search
+  viewRegex: ((.*)(live-search|live-search-etl|logstash-etl)(.*))
+  scmScanInterval: 5m
+  includes: development

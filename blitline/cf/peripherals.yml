@@ -1,0 +1,510 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "Supporting Services for BLitline. This includes S3, Kinesis, and Elastic Transcoder"
+
+Parameters:
+  ProjectName:
+    Description: Top level project name
+    Type: String
+
+  Environment:
+    Description: Environment
+    Type: String
+
+  VpcStack:
+    Description: Wb Network Cidr
+    Type: String
+
+  EncryptionType:
+    Type: String
+    Description: Encryption Type - sse s3 / sse-kms
+
+  EncryptionKey:
+    Type: String
+    Description: Encryption Key for sse-kms encryption
+    Default: ""
+
+  AbortIncompleteMultipartUpload:
+    Type: String
+    Description: Abort Incomplete Multipart Uploads
+
+  DaysAfterInitiation:
+    Type: String
+    Description: 10/20/30 days after Initiation
+    Default: 30
+
+  LoggingDestinationBucketName:
+    Type: String
+    Description: The Logging Destination Bucket Name
+
+  LogFilePrefix:
+    Type: String
+    Description: log file prefix - typically the name of the bucket
+
+  AccessControl:
+    Type: String
+    Description: The access control for the bucket.
+
+  EnableCors:
+    Type: String
+    Description: Turn on/off cors
+    Default: true
+    AllowedValues: [true, false]
+
+  EnableLoggingBucket:
+    Type: String
+    Description: Turn on/off logging bucket
+    Default: true
+    AllowedValues: [true, false]
+
+  BlockPublicAcls:
+    Type: String
+    Description: Turn on/off public acl block
+    Default: true
+    AllowedValues: [true, false]
+
+  BlockPublicPolicy:
+    Type: String
+    Description: Turn on/off public policy block
+    Default: true
+    AllowedValues: [true, false]
+
+  IgnorePublicAcls:
+    Type: String
+    Description: Turn on/off ignore public acl
+    Default: true
+    AllowedValues: [true, false]
+
+  RestrictPublicBuckets:
+    Type: String
+    Description: Turn on/off public bucket restriction
+    Default: true
+    AllowedValues: [true, false]
+
+  BlitlineTempBucket:
+    Type: String
+    Description: Blitline Temp Bucket
+
+  HostedZone:
+    Type: String
+    Default: ""
+
+  InternalDns:
+    Type: String
+
+  KinesisShardCount:
+    Default: 1
+    Description: "ShardCount Name"
+    Type: String
+
+  ShortlifeSuffix:
+    Description: "Shortlife Bucket Suffix"
+    Type: String
+
+  PrivateSuffix:
+    Description: "Shortlife Private Bucket Suffix"
+    Type: String
+
+  PagerDutyEndpoint:
+    Description: PagerDuty Endpoint where errors are reported
+    Type: String
+    Default: ""
+
+Conditions:
+  IsNotDevelopment:
+    !And [
+      !Not [!Equals [!Ref Environment, "dev"]],
+      !Not [!Equals [!Ref Environment, "qa"]],
+    ]
+  UseSSLS3: !Equals [!Ref EncryptionType, "sse-s3"]
+  UseKMS: !Equals [!Ref EncryptionType, "sse-kms"]
+  UseCors: !Equals [true, !Ref EnableCors]
+  UseLoggingBucket: !Equals [true, !Ref EnableLoggingBucket]
+
+  CreateHostedZone: !Equals ["", !Ref HostedZone]
+
+Resources:
+  DnsHostedZone:
+    Condition: CreateHostedZone
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      HostedZoneConfig:
+        Comment: !Sub "private hosted zone for ${InternalDns}"
+      Name: !Ref InternalDns
+      VPCs:
+        - VPCId:
+            Fn::ImportValue: !Sub "${VpcStack}-VPC" # When you specify this property, AWS CloudFormation creates a private hosted zone
+          VPCRegion: !Ref "AWS::Region"
+
+  BlitlineTempShortlifeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${BlitlineTempBucket}${ShortlifeSuffix}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: !If [UseSSLS3, "AES256", "aws:kms"]
+              KMSMasterKeyID:
+                !If [UseKMS, !Ref EncryptionKey, !Ref "AWS::NoValue"]
+
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: !Ref BlockPublicAcls
+        BlockPublicPolicy: !Ref BlockPublicPolicy
+        IgnorePublicAcls: !Ref IgnorePublicAcls
+        RestrictPublicBuckets: !Ref RestrictPublicBuckets
+
+      CorsConfiguration: !If
+        - UseCors
+        - CorsRules:
+            - AllowedMethods:
+                - GET
+              AllowedOrigins:
+                - "*"
+              ExposedHeaders:
+                - "Content-Disposition"
+              Id: AllowHTTP
+              MaxAge: 300
+        - !Ref "AWS::NoValue"
+
+      LifecycleConfiguration:
+        Rules:
+          - Id: "Abort Incomplete Multipart Uploads"
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: !Ref DaysAfterInitiation
+
+      AccessControl: !Ref AccessControl
+
+      LoggingConfiguration: !If
+        - UseLoggingBucket
+        - DestinationBucketName: !Ref LoggingDestinationBucketName
+          LogFilePrefix: !Sub "${ProjectName}/${Environment}/${BlitlineTempBucket}/${ShortlifeSuffix}"
+        - !Ref "AWS::NoValue"
+
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Comment
+          Value: "Shortlife"
+
+  BlitlineTempShortlifePrivateBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${BlitlineTempBucket}${ShortlifeSuffix}${PrivateSuffix}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: !If [UseSSLS3, "AES256", "aws:kms"]
+              KMSMasterKeyID:
+                !If [UseKMS, !Ref EncryptionKey, !Ref "AWS::NoValue"]
+
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: !Ref BlockPublicAcls
+        BlockPublicPolicy: !Ref BlockPublicPolicy
+        IgnorePublicAcls: !Ref IgnorePublicAcls
+        RestrictPublicBuckets: !Ref RestrictPublicBuckets
+
+      CorsConfiguration: !If
+        - UseCors
+        - CorsRules:
+            - AllowedMethods:
+                - GET
+              AllowedOrigins:
+                - "*"
+              ExposedHeaders:
+                - "Content-Disposition"
+              Id: AllowHTTP
+              MaxAge: 300
+        - !Ref "AWS::NoValue"
+
+      LifecycleConfiguration:
+        Rules:
+          - Id: "Abort Incomplete Multipart Uploads"
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: !Ref DaysAfterInitiation
+
+      AccessControl: !Ref AccessControl
+
+      LoggingConfiguration: !If
+        - UseLoggingBucket
+        - DestinationBucketName: !Ref LoggingDestinationBucketName
+          LogFilePrefix: !Sub "${ProjectName}/${Environment}/${BlitlineTempBucket}/${ShortlifeSuffix}-${PrivateSuffix}"
+        - !Ref "AWS::NoValue"
+
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  ErrorSNSTopic:
+    Condition: IsNotDevelopment
+    Type: "AWS::SNS::Topic"
+    Properties:
+      TopicName: !Sub "${ProjectName}-${Environment}-errors"
+      DisplayName: !Sub "${ProjectName}-${Environment}-errors"
+
+  ErrorSNSTopicPolicy:
+    Condition: IsNotDevelopment
+    Type: "AWS::SNS::TopicPolicy"
+    Properties:
+      PolicyDocument:
+        Id: Id1
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Sid1
+            Effect: Allow
+            Principal:
+              Service:
+                - "events.amazonaws.com" # Allow CloudWatch Events
+                - "rds.amazonaws.com" # Allow RDS Events
+                - "s3.amazonaws.com" # Allow S3 Event Notifications
+            Action: "sns:Publish"
+            Resource: !Ref ErrorSNSTopic
+          - Sid: Sid2
+            Effect: Allow
+            Principal:
+              AWS: "*" # Allow CloudWatch Alarms, ElastiCache Notifications, Elastic Beanstalk Notifications, Auto Scaling Notification
+            Action: "sns:Publish"
+            Resource: !Ref ErrorSNSTopic
+            Condition:
+              StringEquals:
+                "AWS:SourceOwner": !Ref "AWS::AccountId"
+          - Sid: Sid3
+            Effect: Allow
+            Principal:
+              Service: "ses.amazonaws.com" # Allow SES Notifications & Events
+            Action: "sns:Publish"
+            Resource: !Ref ErrorSNSTopic
+            Condition:
+              StringEquals:
+                "AWS:Referer": !Ref "AWS::AccountId"
+      Topics:
+        - !Ref ErrorSNSTopic
+
+  ErrorSNSTopicPagerdutySubscription:
+    Type: "AWS::SNS::Subscription"
+    Condition: IsNotDevelopment
+    Properties:
+      DeliveryPolicy:
+        healthyRetryPolicy:
+          minDelayTarget: 1
+          maxDelayTarget: 60
+          numRetries: 100
+          numNoDelayRetries: 0
+          backoffFunction: exponential
+        throttlePolicy:
+          maxReceivesPerSecond: 1
+      Endpoint: !Ref PagerDutyEndpoint
+      Protocol: https
+      TopicArn: !Ref ErrorSNSTopic
+
+  KinesisKmsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      Enabled: true
+      KeyPolicy:
+        Id: !Sub "${ProjectName}-${Environment}-kms-kinesis"
+        Version: "2012-10-17"
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow access for Key Administrators
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+          - Sid: Allow use of this key
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/blitline-${Environment}-iam-ecs-task-role"
+            Action:
+              - "kms:Encrypt"
+              - "kms:Decrypt"
+              - "kms:ReEncrypt*"
+              - "kms:GenerateDataKey*"
+              - "kms:DescribeKey"
+            Resource: "*"
+          - Sid: Allow attachment of persistent resources
+            Effect: Allow
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "kms:ListGrants"
+              - "kms:RevokeGrant"
+              - "kms:CreateGrant"
+            Resource: "*"
+            Condition:
+              Bool:
+                "kms:GrantIsForAWSResource": "true"
+
+  KinesisKmsKeyAlias:
+    Type: "AWS::KMS::Alias"
+    Properties:
+      AliasName: !Sub "alias/${ProjectName}-${Environment}-kms-kinesis"
+      TargetKeyId: !Ref KinesisKmsKey
+
+  KinesisStream:
+    Type: "AWS::Kinesis::Stream"
+    Properties:
+      Name: !Sub "${ProjectName}-${Environment}-events"
+      ShardCount:
+        Ref: KinesisShardCount
+      StreamEncryption:
+        EncryptionType: KMS
+        KeyId: !Ref KinesisKmsKeyAlias
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-${Environment}-events"
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Firehose:
+  #   Condition: CreateFirehoseDeliveryStream
+  #   Type: "AWS::KinesisFirehose::DeliveryStream"
+  #   Properties:
+  #     DeliveryStreamName: !Ref KinesisStreamName
+  #     DeliveryStreamType: DirectPut
+  #     ExtendedS3DestinationConfiguration:
+  #       BucketARN: !Sub "arn:aws:s3:::com-warnerbros-contentnow-${ProjectName}-${Environment}-events"
+  #       BufferingHints:
+  #         IntervalInSeconds: 60
+  #         SizeInMBs: 64
+  #       CompressionFormat: UNCOMPRESSED # Necessary for data format conversion
+  #       CloudWatchLoggingOptions:
+  #         Enabled: true
+  #         LogGroupName: !Ref FirehoseLogGroup
+  #         LogStreamName: !Sub '${ProjectName}-${Environment}-firehose-stream'
+  #       Prefix: !Ref FirehoseToS3Prefix
+  #       RoleARN: !GetAtt FirehoseDeliveryRole.Arn
+
+  TranscodingNotificationsSnsTopic:
+    Type: "AWS::SNS::Topic"
+    Properties:
+      TopicName: !Sub "${ProjectName}-${Environment}-transcoding-notifications"
+      DisplayName: !Sub "${ProjectName}-${Environment}-transcoding-notifications"
+
+Outputs:
+  BlitlineTempBucket:
+    Description: Blitline Temp Bucket Name
+    Value: !Ref BlitlineTempBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-BlitlineTempBucket"
+
+  BlitlineTempBucketArn:
+    Description: Blitline Temp Bucket ARN
+    Value: !Join ["", ["arn:aws:s3:::", !Ref BlitlineTempBucket]]
+    Export:
+      Name: !Sub "${AWS::StackName}-BlitlineTempBucketArn"
+
+  BlitlineTempShortlifeBucket:
+    Description: Blitline Temp Shortlife Bucket Name
+    Value: !Ref BlitlineTempShortlifeBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-BlitlineTempShortlifeBucket"
+
+  BlitlineTempShortlifeBucketArn:
+    Description: Blitline Temp Shortlife Bucket ARN
+    Value: !Join ["", ["arn:aws:s3:::", !Ref BlitlineTempShortlifeBucket]]
+    Export:
+      Name: !Sub "${AWS::StackName}-BlitlineTempShortlifeBucketArn"
+
+  BlitlineTempShortlifePrivateBucket:
+    Description: Blitline Temp Shortlife Private Bucket
+    Value: !Ref BlitlineTempShortlifePrivateBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-BlitlineTempShortlifePrivateBucket"
+
+  BlitlineTempShortlifePrivateBucketArn:
+    Description: Blitline Temp Shortlife Private Bucket Arn
+    Value:
+      !Join ["", ["arn:aws:s3:::", !Ref BlitlineTempShortlifePrivateBucket]]
+    Export:
+      Name: !Sub "${AWS::StackName}-BlitlineTempShortlifePrivateBucketArn"
+
+  KinesisStreamName:
+    #Condition: CreateFirehoseDeliveryStream
+    Description: The name of the Deliverystream
+    Value: !Ref KinesisStream
+    Export:
+      Name: !Sub "${AWS::StackName}-KinesisStreamName"
+
+  KinesisStreamArn:
+    #Condition: CreateFirehoseDeliveryStream
+    Description: The arn of the Deliverystream
+    Value: !GetAtt KinesisStream.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-KinesisStreamArn"
+
+  # DeliveryStreamBucket:
+  #   Condition: CreateFirehoseDeliveryStream
+  #   Description: THe name of the Bucket destination of the Delivery Stream
+  #   Value: !Ref BlitlineFirehoseBucket
+  #   Export:
+  #     Name: !Sub "${AWS::StackName}-DeliveryStreamBucket"
+
+  # DeliveryStreamBucketArn:
+  #   Condition: CreateFirehoseDeliveryStream
+  #   Description: THe name of the Bucket destination of the Delivery Stream
+  #   Value: !Join ['', ['arn:aws:s3:::', !Ref BlitlineFirehoseBucket]]
+  #   Export:
+  #     Name: !Sub "${AWS::StackName}-DeliveryStreamBucketArn"
+
+  HostedZone:
+    Condition: CreateHostedZone
+    Description: "A Private Hosted Zone for Components"
+    Value: !Ref DnsHostedZone
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-HostedZone"
+
+  InternalDnsWithDot:
+    Condition: CreateHostedZone
+    Description: The Internal DNS Created in the Hosted Zone
+    Value: !Ref InternalDns
+    Export:
+      Name: !Sub "${AWS::StackName}-InternalDns"
+
+  TranscodingSnsTopic:
+    #Condition: CreateFirehoseDeliveryStream
+    Description: The Transcoding Notifications SNS Topic
+    Value: !Ref TranscodingNotificationsSnsTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-TranscodingSnsTopic"
+
+  ErrorSNSTopic:
+    Condition: IsNotDevelopment
+    Description: The error notifications sns topic
+    Value: !Ref ErrorSNSTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-ErrorSNSTopic"

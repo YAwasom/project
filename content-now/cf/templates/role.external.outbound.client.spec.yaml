@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "IAM role definition for external access to outbound/clientSpec API"
+Parameters:
+
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+    Default: dev
+
+Conditions:
+  IsPreProd:
+    !Or [!Equals [!Ref Environment, "dev"], !Equals [!Ref Environment, "qa"]]
+
+Resources:
+  OutboundClientSpecRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-${AWS::Region}"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !If [
+                    IsPreProd,
+                    "arn:aws:iam::586566971867:root",
+                    "arn:aws:iam::606982715702:root",
+                  ]
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: !Sub "${AWS::StackName}"
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "execute-api:Invoke"
+                Resource: 
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/GET/outbound/clientspec"
+                  - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*/*/POST/outbound/clientspec"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-${AWS::Region}"
+
+Outputs:
+  OutboundClientSpecRole:
+    Description: role for external access to outbound client spec api
+    Value: !GetAtt OutboundClientSpecRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-${AWS::Region}"

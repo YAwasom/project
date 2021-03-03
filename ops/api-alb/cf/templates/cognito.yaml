@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  ApiCognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub wb-cmd-${AWS::StackName}-userpool
+  ApiCognitoResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      Identifier: "transactions"
+      Name: "transactions"
+      Scopes:
+        - ScopeName: "post"
+          ScopeDescription: "post_tx"
+        - ScopeName: "get"
+          ScopeDescription: "get_tx"
+      UserPoolId: !Ref ApiCognitoUserPool
+  ApiCognitoUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      #CustomDomainConfig:
+      Domain: !Sub wb-cmd-${AWS::StackName}
+      UserPoolId: !Ref ApiCognitoUserPool
+
+  #Blitline Client
+  ApiCognitoUserPoolBlitlineClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref ApiCognitoUserPool
+      ClientName: !Sub wb-cmd-${AWS::StackName}-BlitlineClient
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - transactions/post
+        - openid
+      CallbackURLs:
+        - https://wb-cmd-apialb-dev-api-alb-1806725170.us-west-2.elb.amazonaws.com/oauth2/idpresponse #This creates a circular reference need to update manually after creating ALB rule
+      GenerateSecret: true
+      AllowedOAuthFlowsUserPoolClient: true
+    DependsOn: ApiCognitoResourceServer
+  #PublishAPI Client
+  ApiCognitoUserPoolPublishApiClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref ApiCognitoUserPool
+      ClientName: !Sub wb-cmd-${AWS::StackName}-PublishApiClient
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - transactions/post
+        - openid
+      CallbackURLs:
+        - https://wb-cmd-apialb-dev-api-alb-1806725170.us-west-2.elb.amazonaws.com/oauth2/idpresponse #This creates a circular reference need to update manually after creating ALB rule
+      GenerateSecret: true
+      AllowedOAuthFlowsUserPoolClient: true
+    DependsOn: ApiCognitoResourceServer
+
+Outputs:
+  PoolArn:
+    Description: "PoolArn"
+    Value: !GetAtt ApiCognitoUserPool.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-PoolArn
+  BlitlineClientId:
+    Description: "BlitlineClientId"
+    Value: !Ref ApiCognitoUserPoolBlitlineClient
+    Export:
+      Name: !Sub ${AWS::StackName}-BlitlineClientId
+  PublishApiClientId:
+    Description: "BlitlineClientId"
+    Value: !Ref ApiCognitoUserPoolPublishApiClient
+    Export:
+      Name: !Sub ${AWS::StackName}-PublishApiClientId
+  UserPoolDomain:
+    Description: "UserPoolDomain"
+    Value: !Ref ApiCognitoUserPoolDomain
+    Export:
+      Name: !Sub ${AWS::StackName}-UserPoolDomain

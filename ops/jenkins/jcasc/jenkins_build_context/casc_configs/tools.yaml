@@ -1,0 +1,15 @@
+tool:
+  git:
+    installations:
+      - home: git
+        name: Default
+        
+  pipelineMaven:
+    publisherOptions:
+    - junitPublisher:
+        healthScaleFactor: !!int '1.0'
+    triggerDownstreamUponResultAborted: false
+    triggerDownstreamUponResultFailure: false
+    triggerDownstreamUponResultNotBuilt: false
+    triggerDownstreamUponResultSuccess: true
+    triggerDownstreamUponResultUnstable: false

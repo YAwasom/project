@@ -1,0 +1,23 @@
+ProjectName                     : blitline
+BlitlineTempBucket              : com-warnerbros-contentnow-qa-nuxeo
+Environment                     : qa
+EncryptionType                  : "sse-s3"
+AbortIncompleteMultipartUpload  : true
+EncryptionKey                   : ""
+DaysAfterInitiation             : 30
+LoggingDestinationBucketName    : com-warnerbros-contentnow-qa-accesslogs
+LogFilePrefix                   : blitline-qa
+AccessControl                   : "Private"
+EnableCors                      : true
+EnableLoggingBucket             : true
+BlockPublicAcls                 : true
+BlockPublicPolicy               : true
+IgnorePublicAcls                : true
+RestrictPublicBuckets           : true
+InternalDns                     : "blitline.warnerbros.com."
+HostedZone                      : NOTNULL
+VpcStack                        : contentnow-vpc-dev
+NumberOfStreamShards            : 1
+ShortlifeSuffix                 : '-shortlife'
+PrivateSuffix                   : '-private'
+

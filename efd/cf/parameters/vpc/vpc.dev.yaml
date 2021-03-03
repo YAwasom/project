@@ -1,0 +1,7 @@
+Environment: dev
+CIDRPublicA: 10.176.218.0/27
+CIDRPrivateA: 10.176.218.32/27	
+CIDRPrivateB: 10.176.218.64/27	
+CIDRPrivateC: 10.176.218.96/27	
+CIDRVpc: 10.176.218.0/25
+ProjectName: wbts-efd-dev

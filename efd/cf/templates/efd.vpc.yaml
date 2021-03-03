@@ -1,0 +1,330 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: efd vpc
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+  ProjectName:
+    Description: Top level project name
+    Type: String
+    Default: wbts-efd-dev
+
+  CIDRVpc:
+    Description: CIDR block for the entire VPC
+    Type: String
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Default: 173.31.0.0/16
+
+  CIDRPublicA:
+    Description: CIDR block for Public Zone A
+    Type: String
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Default: 10.176.218.0/27
+
+  CIDRPrivateA:
+    Description: CIDR block for Public Zone B
+    Type: String
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Default: 10.176.218.32/27
+
+  CIDRPrivateB:
+    Description: CIDR block for Public Zone C
+    Type: String
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Default: 10.176.218.64/27
+
+  CIDRPrivateC:
+    Description: CIDR block for Public Zone C
+    Type: String
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Default: 10.176.218.96/27
+
+
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref CIDRVpc
+      InstanceTenancy: default
+      EnableDnsSupport: "true"
+      EnableDnsHostnames: "true"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}"
+
+
+  VPCFlowLogs:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      DeliverLogsPermissionArn: !GetAtt VpcFlowLogRole.Arn
+      LogGroupName: !Sub "${AWS::StackName}-flow-logs"
+      LogDestinationType: cloud-watch-logs
+      ResourceId: !Ref VPC
+      ResourceType: VPC
+      TrafficType: ALL
+
+  VpcFlowLogRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-role-flow-logs"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "vpc-flow-logs.amazonaws.com"
+            Action: ["sts:AssumeRole"]
+      Policies:
+        - PolicyName: vpc-flow-log
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                Resource: "*"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-igw"
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref "VPC"
+      InternetGatewayId: !Ref "InternetGateway"
+
+  PublicRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref "VPC"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-rtb-pub01"
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref "PublicRouteTableA"
+      GatewayId: !Ref "InternetGateway"
+
+  PrivateRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref "VPC"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-rtb-prv01"
+
+  PrivateRouteA:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      RouteTableId: !Ref "PrivateRouteTableA"
+      NatGatewayId: !Ref "NatGateway"
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref CIDRPublicA
+      AvailabilityZone: us-west-2a
+      MapPublicIpOnLaunch: False
+      VpcId: !Ref "VPC"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-pub-subnet-1A"
+
+  AppTierSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref CIDRPrivateA
+      AvailabilityZone: us-west-2a
+      MapPublicIpOnLaunch: False
+      VpcId: !Ref "VPC"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-app-subnet-1-2A"
+
+  AppTierSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref CIDRPrivateB
+      AvailabilityZone: us-west-2b
+      MapPublicIpOnLaunch: False
+      VpcId: !Ref "VPC"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-app-subnet-2-2B"
+
+  AppTierSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref CIDRPrivateC
+      AvailabilityZone: us-west-2c
+      MapPublicIpOnLaunch: False
+      VpcId: !Ref "VPC"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-app-subnet-3-2C"
+
+
+  PublicSubnetATableAssociation1A:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      SubnetId: !Ref "PublicSubnetA"
+
+
+  SubnetATableAssociation1A:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref "PrivateRouteTableA"
+      SubnetId: !Ref "AppTierSubnetA"
+
+  SubnetATableAssociation2A:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref "PrivateRouteTableA"
+      SubnetId: !Ref "AppTierSubnetB"
+
+  SubnetATableAssociation3A:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref "PrivateRouteTableA"
+      SubnetId: !Ref "AppTierSubnetC"
+
+
+  EipA:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: !Ref "VPC"
+
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - EipA
+          - AllocationId
+      SubnetId: !Ref "PublicSubnetA"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-nat-gw"
+
+Outputs:
+  AvailabilityZoneA:
+    Description: "efd availability zone of a"
+    Value: !Select [0, !GetAZs ""]
+    Export:
+      # efd-dev-vpc-az-a
+      Name: !Sub "${AWS::StackName}-az-a"
+
+  AvailabilityZoneB:
+    Description: "efd availability zone of b"
+    Value: !Select [1, !GetAZs ""]
+    Export:
+      # efd-dev-vpc-az-b
+      Name: !Sub "${AWS::StackName}-az-b"
+
+  AvailabilityZoneC:
+    Description: "efd availability zone of c"
+    Value: !Select [2, !GetAZs ""]
+    Export:
+      # efd-dev-vpc-az-c
+      Name: !Sub "${AWS::StackName}-az-c"
+
+  VpcId:
+    Description: "efd vpc id"
+    Value: !Ref VPC
+    Export:
+      # efd-dev-vpc1-id
+      Name: !Sub "${AWS::StackName}-id"
+  VpcFlowLogRoleArn:
+    Description: "Atom vpc flow log role"
+    Value: !GetAtt VpcFlowLogRole.Arn
+    Export:
+      # ef-dev-vpc-role-flow-logs-arn
+      Name: !Sub "${AWS::StackName}-role-flow-logs-arn"
+
+  Ig:
+    Description: "efd internet gateway"
+    Value: !Ref InternetGateway
+    Export:
+      Name: !Sub "${AWS::StackName}-ig"
+
+  PublicRouteTableA:
+    Description: "efd public route table"
+    Value: !Ref PublicRouteTableA
+    Export:
+      Name: !Sub "${AWS::StackName}-public-rt-a"
+
+  PrivateRouteTableA:
+    Description: "efd private route table"
+    Value: !Ref PrivateRouteTableA
+    Export:
+      Name: !Sub "${AWS::StackName}-private-rt-a"
+
+  PublicSubnetA:
+    Description: "efd public subnet a"
+    Value: !Ref PublicSubnetA
+    Export:
+      Name: !Sub "${AWS::StackName}-public-subnet-a"
+
+  AppTierSubnetA:
+    Description: "efd private app tier subnet"
+    Value: !Ref AppTierSubnetA
+    Export:
+      Name: !Sub "${AWS::StackName}-app-private-subnet-1-2A"
+
+  AppTierSubnetB:
+    Description: "efd private app tier subnet"
+    Value: !Ref AppTierSubnetB
+    Export:
+      Name: !Sub "${AWS::StackName}-app-private-subnet-2-2B"
+
+  AppTierSubnetC:
+    Description: "efd private app tier subnet"
+    Value: !Ref AppTierSubnetC
+    Export:
+      Name: !Sub "${AWS::StackName}-app-private-subnet-3-2C"
+
+  NatGateway:
+    Description: "efd nat gateway a"
+    Value: !Ref NatGateway
+    Export:
+      Name: !Sub "${AWS::StackName}-nat-a"
+
+  NatGatewayIpAddress:
+    Description: "efd nat gateway a ip"
+    Value: !Sub "${EipA}/32"
+    Export:
+      Name: !Sub "${AWS::StackName}-nat-a-ip"

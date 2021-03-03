@@ -1,0 +1,5 @@
+Environment: dev
+RdsInstanceClass: db.t2.small
+MySQLDbName: MyDatabase
+MySQLMasterUserName: marsservice
+MySQLPassword: MyPassword

@@ -1,0 +1,105 @@
+ext {
+    // Should be able to source these from .env which centralizes the config
+    awsAccountId = "348180535083"
+    awsRegion = System.getenv('AWS_REGION')
+    dockerImageName = "cmd/jenkins"
+    dockerTag = "latest"
+    schemaVersion = "0.0.1"
+    jenkinsPort = "8080"
+    jenkinsSlavePort = "50000"
+    jenkinsHost = "localhost"
+    jenkinsURL = "http://localhost:8080"
+    jenkinsEnvironment = "ops"
+}
+
+def getEcrImageUri = { ->
+    return "${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/$dockerImageName"
+}
+
+def getEcrImageUriWithTag = { ->
+    return "${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com/$dockerImageName:$dockerTag"
+}
+
+def getDockerLabels = { ->
+    def buildDate = new ByteArrayOutputStream()
+    exec{
+        commandLine "date", "-u", "+%Y-%m-%dT%H:%M:%SZ"
+        standardOutput = buildDate;
+    }
+
+    def vcsRef = new ByteArrayOutputStream()
+    exec{
+        commandLine "git", "log", "--pretty=format:\'%h\'", "-n 1"
+        standardOutput = vcsRef;
+    }
+
+    return [
+        build_date: "BUILD_DATE=$buildDate",
+        vcs_ref: "VCS_REF=$vcsRef",
+        schema_version: "SCHEMA_VERSION=$schemaVersion"
+    ]
+}
+
+task up(type: Exec) {
+    group 'Docker'
+    description "Run the jenkins docker container locally, use the 'latest' tag"
+    commandLine 'docker-compose'
+    args = ['up','--detach']
+}
+
+task("login") {
+    def registryUri = getEcrImageUri()
+    exec {
+        commandLine "/bin/bash", "-c", "aws ecr get-login-password --region ${awsRegion} | docker login --username AWS --password-stdin $registryUri"
+        description 'Login to aws docker ecr'
+    }
+}
+
+task stop(type: Exec) {
+    group 'Docker'
+    description 'Stop the jenkins docker container'
+    commandLine 'docker'
+    args = ['rm', '-f', '-v', 'jenkins']
+}
+
+task down(type: Exec) {
+    group 'Docker'
+    description 'Stop the jenkins docker container'
+    commandLine 'docker-compose', '-v' , 'down'
+}
+
+task build(type: Exec) {
+    def labels = getDockerLabels()
+
+    group 'Docker'
+    description "Build the docker image"
+    commandLine 'docker-compose', 'build', "--build-arg" , labels['build_date'], "--build-arg", labels['vcs_ref'], "--build-arg", labels['schema_version'], "--build-arg", "RUNNING_ON_LOCALHOST=false"
+}
+
+task buildNoCache(type: Exec) {
+    def labels = getDockerLabels()
+
+    group 'Docker'
+    description "Build the docker image"
+    commandLine 'docker-compose', 'build', "--no-cache", "--build-arg" , labels['build_date'], "--build-arg", labels['vcs_ref'], "--build-arg", labels['schema_version'], "--build-arg", "RUNNING_ON_LOCALHOST=false"
+}
+
+task tag(type: Exec) {
+    group 'Docker'
+    description "Tag the docker image to be ready for push to aws ecr"
+    commandLine 'docker'
+    args = ['tag', "$dockerImageName:$dockerTag", getEcrImageUriWithTag()]
+}
+
+task push(type: Exec) {
+    group 'Docker'
+    description 'Push the docker image with the current tag'
+    commandLine 'docker'
+    args = ['push', getEcrImageUriWithTag()]
+}
+
+task syncConfig(type: Exec) {
+    description 'Sync the casc configuration to s3'
+    commandLine 'aws'
+    args = ['s3', 'sync', 'jenkins_build_context/casc_configs', "s3://wb-cmd-${jenkinsEnvironment}-s3-jenkins-configuration" ]
+}

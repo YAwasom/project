@@ -1,0 +1,45 @@
+pipeline {
+    agent {
+        label "dind-apline-1cpu-2gb"
+    }
+    environment{
+        AWS_REGION = "us-west-2"
+        AWS = credentials("cmdt_jenkins_aws_credentials")
+    }
+    stages{
+        stage('start') {
+            steps {
+                sendNotifications "STARTED"
+            }
+        }
+        stage('build image') {
+            steps {
+                dir('ops/jenkins/jcasc/jenkins_build_context'){
+                    script {
+                        docker.withRegistry('https://348180535083.dkr.ecr.us-west-2.amazonaws.com', 'ecr:us-west-2:cmdt_jenkins_aws_credentials' ) {
+                            docker.build("cmd/jenkins:${env.GIT_COMMIT.take(7)}")
+                            docker.build("cmd/jenkins:latest")
+                        }
+                    }
+                }
+            }
+        }
+        stage('push image') {
+            steps {
+                dir('ops/jenkins/jcasc/jenkins_build_context'){
+                    script {
+                        docker.withRegistry('https://348180535083.dkr.ecr.us-west-2.amazonaws.com', 'ecr:us-west-2:cmdt_jenkins_aws_credentials') {
+                            docker.image("cmd/jenkins:${env.GIT_COMMIT.take(7)}").push()
+                            docker.image("cmd/jenkins:latest").push()
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            sendNotifications currentBuild.currentResult
+        }
+    }
+}

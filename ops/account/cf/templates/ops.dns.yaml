@@ -1,0 +1,36 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "ops dns"
+
+Parameters:
+  Environment:
+    Description: "An environment name that will be appended to resource names"
+    Type: "String"
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+Resources:
+  OpsHostedZone:
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      HostedZoneConfig:
+        Comment: "cmd-ops.warnerbros.com zone"
+      Name: "cmd-ops.warnerbros.com"
+
+Outputs:
+  OpsHostedZoneId:
+    Description: "ops cmd-ops.warnerbros.com zone"
+    Value: !Ref OpsHostedZone
+    Export:
+      # wb-cmd-ops-dns-phz-id
+      Name: !Sub "${AWS::StackName}-phz-id"
+
+  OpsHostedZoneNameServers:
+    Description: "ops cmd-ops.warnerbros.com zone"
+    Value: !Join [",", !GetAtt OpsHostedZone.NameServers]
+    Export:
+      # wb-cmd-ops-dns-phz-ns-list
+      Name: !Sub "${AWS::StackName}-phz-ns-list"

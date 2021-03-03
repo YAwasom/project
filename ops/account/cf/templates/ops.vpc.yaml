@@ -1,0 +1,520 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: ops vpc
+
+Parameters:
+  Environment:
+    Description: "An environment name that will be appended to resource names"
+    Type: "String"
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+  TransitGatewayIdDirectConnect:
+    Description: "transit gateway id for direct connect"
+    Type: "String"
+    Default: tgw-01837e2b9be58a646
+
+Resources:
+  VPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      # Assigned by EIS
+      CidrBlock: "10.176.162.0/24"
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          # wb-cmd-ops-vpc
+          Value: !Ref AWS::StackName
+
+  PrivateVpcCidr:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties:
+      CidrBlock: "10.255.0.0/16"
+      VpcId: !Ref VPC
+
+  InternetGateway:
+    Type: "AWS::EC2::InternetGateway"
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-ig"
+
+  VpcGatewayAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment"
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  VpcFlowLog:
+    Type: "AWS::EC2::FlowLog"
+    Properties:
+      DeliverLogsPermissionArn:
+        Fn::ImportValue: !Sub "wb-cmd-${Environment}-role-${AWS::Region}-vpc-flow-logs-arn"
+      LogGroupName: !Sub "${AWS::StackName}-${AWS::Region}-flow-logs"
+      LogDestinationType: cloud-watch-logs
+      ResourceId: !Ref VPC
+      ResourceType: VPC
+      TrafficType: ALL
+
+  # Public Subnets - 3, one in each AZ
+  PublicSubnetA:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: !Sub "10.176.162.0/25"
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-subnet-a"
+
+  PublicSubnetB:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: !Sub "10.176.162.128/26"
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-subnet-b"
+
+  PublicSubnetC:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select [2, !GetAZs ""]
+      CidrBlock: !Sub "10.176.162.192/26"
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-subnet-c"
+
+  # Private Subnets
+  PrivateSubnetA:
+    Type: "AWS::EC2::Subnet"
+    DependsOn:
+      - PrivateVpcCidr
+    Properties:
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: 10.255.0.0/20
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-private-subnet-a"
+
+  PrivateSubnetB:
+    Type: "AWS::EC2::Subnet"
+    DependsOn:
+      - PrivateVpcCidr
+    Properties:
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: 10.255.16.0/20
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-private-subnet-b"
+
+  PrivateSubnetC:
+    Type: "AWS::EC2::Subnet"
+    DependsOn:
+      - PrivateVpcCidr
+    Properties:
+      AvailabilityZone: !Select [2, !GetAZs ""]
+      CidrBlock: 10.255.32.0/20
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-private-subnet-c"
+
+  # Public route tables and associations
+  PublicRouteTableA:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-rt-a"
+
+  PublicRouteTableB:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-rt-b"
+
+  PublicRouteTableC:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-rt-c"
+
+  RouteTableAssociationPublicSubnetA:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTableA
+
+  RouteTableAssociationPublicSubnetB:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTableB
+
+  RouteTableAssociationPublicSubnetC:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PublicSubnetC
+      RouteTableId: !Ref PublicRouteTableC
+
+  # Private route tables and associations
+  PrivateRouteTableA:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-private-rt-a"
+
+  PrivateRouteTableB:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-private-rt-b"
+
+  PrivateRouteTableC:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-private-rt-c"
+
+  RouteTableAssociationPrivateA:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRouteTableA
+
+  RouteTableAssociationPrivateB:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnetB
+      RouteTableId: !Ref PrivateRouteTableB
+
+  RouteTableAssociationPrivateC:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      SubnetId: !Ref PrivateSubnetC
+      RouteTableId: !Ref PrivateRouteTableC
+
+  # Attach the internet gateway to the public route table
+  RouteTablePublicInternetRouteA:
+    Type: "AWS::EC2::Route"
+    DependsOn: VpcGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+
+  RouteTablePublicInternetRouteB:
+    Type: "AWS::EC2::Route"
+    DependsOn: VpcGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTableB
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+
+  RouteTablePublicInternetRouteC:
+    Type: "AWS::EC2::Route"
+    DependsOn: VpcGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTableC
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+
+  # Setup NAT Gateway
+
+  EipA:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  EipB:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  EipC:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  NatA:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - EipA
+          - AllocationId
+      SubnetId: !Ref PublicSubnetA
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-nat-a"
+        - Key: AvailabilityZone
+          Value: !Select [0, !GetAZs ""]
+
+  NatB:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - EipB
+          - AllocationId
+      SubnetId: !Ref PublicSubnetB
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-nat-b"
+        - Key: AvailabilityZone
+          Value: !Select [1, !GetAZs ""]
+
+  NatC:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+          - EipC
+          - AllocationId
+      SubnetId: !Ref PublicSubnetC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-nat-c"
+        - Key: AvailabilityZone
+          Value: !Select [2, !GetAZs ""]
+
+  NatARoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatA
+
+  NatBRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableB
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatB
+
+  NatCRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTableC
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId:
+        Ref: NatC
+
+  TransitGatewayAttachmentDirectConnect:
+    Type: AWS::EC2::TransitGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      TransitGatewayId: !Ref TransitGatewayIdDirectConnect
+      SubnetIds:
+        - !Ref PublicSubnetA
+        - !Ref PublicSubnetB
+        - !Ref PublicSubnetC
+      Tags:
+        - Key: Name
+          Value: warner-media-on-prem-tga
+
+  RouteDirectConnectA:
+    Type: "AWS::EC2::Route"
+    DependsOn: TransitGatewayAttachmentDirectConnect
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      DestinationCidrBlock: "10.0.0.0/8"
+      TransitGatewayId: !Ref TransitGatewayIdDirectConnect
+
+  RouteDirectConnectB:
+    Type: "AWS::EC2::Route"
+    DependsOn: TransitGatewayAttachmentDirectConnect
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      DestinationCidrBlock: "10.0.0.0/8"
+      TransitGatewayId: !Ref TransitGatewayIdDirectConnect
+
+  RouteDirectConnectC:
+    Type: "AWS::EC2::Route"
+    DependsOn: TransitGatewayAttachmentDirectConnect
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      DestinationCidrBlock: "10.0.0.0/8"
+      TransitGatewayId: !Ref TransitGatewayIdDirectConnect
+
+Outputs:
+  AvailabilityZoneA:
+    Description: "ops vpc availability zone of a"
+    Value: !Select [0, !GetAZs ""]
+    Export:
+      # wb-cmd-ops-vpc-az-a
+      Name: !Sub "${AWS::StackName}-az-a"
+
+  AvailabilityZoneB:
+    Description: "ops vpc availability zone of b"
+    Value: !Select [1, !GetAZs ""]
+    Export:
+      # wb-cmd-ops-vpc-az-b
+      Name: !Sub "${AWS::StackName}-az-b"
+
+  AvailabilityZoneC:
+    Description: "ops vpc availability zone of c"
+    Value: !Select [2, !GetAZs ""]
+    Export:
+      # wb-cmd-ops-vpc-az-c
+      Name: !Sub "${AWS::StackName}-az-c"
+
+  VpcId:
+    Description: "ops vpc id"
+    Value: !Ref VPC
+    Export:
+      # wb-cmd-ops-vpc-id
+      Name: !Sub "${AWS::StackName}-id"
+
+  Ig:
+    Description: "ops internet gateway"
+    Value: !Ref InternetGateway
+    Export:
+      Name: !Sub "${AWS::StackName}-ig"
+
+  PrivateRouteTableA:
+    Description: "ops private route table"
+    Value: !Ref PrivateRouteTableA
+    Export:
+      Name: !Sub "${AWS::StackName}-private-rt-a"
+
+  PrivateRouteTableB:
+    Description: "ops private route table"
+    Value: !Ref PrivateRouteTableB
+    Export:
+      Name: !Sub "${AWS::StackName}-private-rt-b"
+
+  PrivateRouteTableC:
+    Description: "ops private route table"
+    Value: !Ref PrivateRouteTableC
+    Export:
+      Name: !Sub "${AWS::StackName}-private-rt-c"
+
+  PublicRouteTableA:
+    Description: "ops public route table"
+    Value: !Ref PublicRouteTableA
+    Export:
+      Name: !Sub "${AWS::StackName}-public-rt-a"
+
+  PublicRouteTableB:
+    Description: "ops public route table"
+    Value: !Ref PublicRouteTableB
+    Export:
+      Name: !Sub "${AWS::StackName}-public-rt-b"
+
+  PublicRouteTableC:
+    Description: "ops public route table"
+    Value: !Ref PublicRouteTableC
+    Export:
+      Name: !Sub "${AWS::StackName}-public-rt-c"
+
+  PublicSubnetA:
+    Description: "ops public subnet a"
+    Value: !Ref PublicSubnetA
+    Export:
+      Name: !Sub "${AWS::StackName}-public-subnet-a"
+
+  PublicSubnetB:
+    Description: "ops public subnet b"
+    Value: !Ref PublicSubnetB
+    Export:
+      Name: !Sub "${AWS::StackName}-public-subnet-b"
+
+  PublicSubnetC:
+    Description: "ops public subnet c"
+    Value: !Ref PublicSubnetC
+    Export:
+      Name: !Sub "${AWS::StackName}-public-subnet-c"
+
+  PrivateSubnetA:
+    Description: "ops private subnet a"
+    Value: !Ref PrivateSubnetA
+    Export:
+      Name: !Sub "${AWS::StackName}-private-subnet-a"
+
+  PrivateSubnetB:
+    Description: "ops private subnet b"
+    Value: !Ref PrivateSubnetB
+    Export:
+      Name: !Sub "${AWS::StackName}-private-subnet-b"
+
+  PrivateSubnetC:
+    Description: "ops private subnet c"
+    Value: !Ref PrivateSubnetC
+    Export:
+      Name: !Sub "${AWS::StackName}-private-subnet-c"
+
+  NatA:
+    Description: "ops nat gateway a"
+    Value: !Ref NatA
+    Export:
+      Name: !Sub "${AWS::StackName}-nat-a"
+
+  NatB:
+    Description: "ops nat gateway b"
+    Value: !Ref NatB
+    Export:
+      Name: !Sub "${AWS::StackName}-nat-b"
+
+  NatC:
+    Description: "ops nat gateway c"
+    Value: !Ref NatC
+    Export:
+      Name: !Sub "${AWS::StackName}-nat-c"
+
+  NatAIpAddress:
+    Description: "ops nat gateway a ip"
+    Value: !Sub "${EipA}/32"
+    Export:
+      Name: !Sub "${AWS::StackName}-nat-a-ip"
+
+  NatBIpAddress:
+    Description: "ops nat gateway b ip"
+    Value: !Sub "${EipB}/32"
+    Export:
+      Name: !Sub "${AWS::StackName}-nat-b-ip"
+
+  NatCIpAddress:
+    Description: "ops nat gateway c ip"
+    Value: !Sub "${EipC}/32"
+    Export:
+      Name: !Sub "${AWS::StackName}-nat-c-ip"
+
+  InternalDns:
+    Description: "ops internal dns"
+    Value: "TODO FIX THIS"
+    Export:
+      Name: !Sub "${AWS::StackName}-internal-dns"
+
+  PrivateHostedZoneName:
+    Description: "The name of the private hosted zone."
+    Value: "TODO FIX THIS"
+    Export:
+      Name: !Sub "${AWS::StackName}-private-hosted-zone-name"

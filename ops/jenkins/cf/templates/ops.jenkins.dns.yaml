@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ops jenkins on ecs with elb dns
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+  JenkinsDNSName:
+    Description: Jenkins Alias for the ELB
+    Type: String
+    Default: jenkins.cmd-ops.warnerbros.com
+
+Resources:
+  JenkinsDNS:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: "cmd-ops.warnerbros.com."
+      Comment: Zone apex alias targeted to Jenkins ELB.
+      RecordSets:
+        - Name: !Ref JenkinsDNSName
+          Type: A
+          AliasTarget:
+            HostedZoneId:
+              Fn::ImportValue: !Sub "wb-cmd-${Environment}-ecs-jenkins-elb-hosted-zone-id"
+            DNSName:
+              Fn::ImportValue: !Sub "wb-cmd-${Environment}-ecs-jenkins-elb-dns-name"

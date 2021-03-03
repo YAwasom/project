@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ops jenkins ecr repos
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+Mappings:
+  AccountMap:
+    content-now-pre-prod:
+      "Arn": "arn:aws:iam::147180035125:root"
+      "AccountId": "147180035125"
+    content-now-prod:
+      "Arn": "arn:aws:iam::507416135429:root"
+      "AccountId": "507416135429"
+    msb-pre-prod:
+      "Arn": "arn:aws:iam::880247372461:root"
+      "AccountId": "880247372461"
+    msb-prod:
+      "Arn": "arn:aws:iam::635365561645:root"
+      "AccountId": "635365561645"
+    mars-efd-dev:
+      "Arn": "arn:aws:iam::656419642964:root"
+      "AccountId": "656419642964"
+    mars-efd-stage:
+      "Arn": "arn:aws:iam::249411880833:root"
+      "AccountId": "249411880833"
+    mars-efd-prod:
+      "Arn": "arn:aws:iam::077047573990:root"
+      "AccountId": "077047573990"
+
+Resources:
+  SecurityAutomation:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "malt/security-automation"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCrossAccountPull
+            Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [AccountMap, "content-now-pre-prod", "Arn"]
+                - !FindInMap [AccountMap, "content-now-prod", "Arn"]
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "malt/security-automation"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+  GithubRunnerTesting:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: "malt/github-runner-testing"
+      LifecyclePolicy:
+        RegistryId: !Ref AWS::AccountId
+        LifecyclePolicyText: |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "remove all untagged images",
+                "selection": {
+                  "tagStatus": "untagged",
+                  "countType": "sinceImagePushed",
+                  "countUnit": "days",
+                  "countNumber": 7
+                },
+                "action": {
+                  "type": "expire"
+                }
+              }
+            ]
+          }
+      Tags:
+        - Key: "Name"
+          Value: "malt/github-runner-testing"
+        - Key: "Environment"
+          Value: !Ref Environment
+
+Outputs:
+  SecurityAutomation:
+    Description: "security automation ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${SecurityAutomation}"
+    Export:
+      Name: !Sub "${AWS::StackName}-wm-malt-security-automation"
+
+  GithubRunnerTesting:
+    Description: "github runner testing ecr repo"
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${GithubRunnerTesting}"
+    Export:
+      Name: !Sub "${AWS::StackName}-wm-malt-github-runner-testing"

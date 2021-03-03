@@ -1,0 +1,150 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "ContentNow Deploy User and Roles"
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+
+  EnvironmentWithDashOrEmpty:
+    Description: An environment with or without a ending dash
+    Type: String
+    Default: ""
+
+  BaseUrl:
+    Description: Suffix for Bucket name, related to target URL
+    Type: String
+    Default: "contentnow.warnerbros.com"
+
+  ArtifactBucketName:
+    Description: Name of bucket where artifacts
+    Type: String
+    Default: contentnow-orch-lambda-functions
+
+Conditions:
+  isProd: !Equals [ !Ref Environment, prod ]
+
+Resources:
+  AssumeDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      # wb-cn-livesearch-deploy-{env}-jenkins-us-west-2
+      RoleName: !Sub "${AWS::StackName}-jenkins-${AWS::Region}"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - arn:aws:iam::348180535083:role/wb-cmd-ops-role-jenkins-us-west-2
+            Action: ["sts:AssumeRole"]
+      Path: /
+      Policies:
+        - PolicyName: cf-deploy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudformation:GetTemplateSummary
+                  - cloudformation:Get*
+                  - cloudformation:List*
+                  - cloudformation:Describe*
+                  - cloudformation:Validate*
+                  - cloudformation:Create*
+                  - cloudformation:UpdateStack*
+                  - cloudformation:Cancel*
+                  - cloudformation:Detect*
+                  - cloudformation:Stop*
+                  - cloudformation:Execute*
+                  - cloudformation:Signal*
+                  - cloudformation:Continue*
+                  - cloudformation:Estimate*
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ec2:*
+                  # - ec2:AuthorizeSecurityGroupIngress
+                  # - ec2:CreateSecurityGroup
+                  # - ec2:CreateTags
+                  # - ec2:DeleteSecurityGroup
+                  # - ec2:DescribeSecurityGroups
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - cognito-idp:*
+                  - cognito-identity:*
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:CreateBucket
+                  - s3:SetBucketEncryption
+                  - s3:PutBucketVersioning
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - lambda:*
+                  # - lambda:GetFunction
+                  # - lambda:InvokeFunction
+                  # - lambda:UpdateFunctionCode
+                  # - lambda:UpdateFunctionConfiguration
+                  # - lambda:ListTags
+                  # - lambda:TagResource
+                  # - lambda:UntagResource
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - iam:GetRole
+                  - iam:CreateRole
+                  - iam:PassRole
+                  - iam:PutRolePolicy
+                  - iam:UpdateAssumeRolePolicy
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - apigateway:*
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - appsync:*
+                Resource: "*"
+        - PolicyName: s3-deploy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudfront:CreateCloudFrontOriginAccessIdentity
+                  - cloudfront:GetCloudFrontOriginAccessIdentityConfig
+                  - cloudfront:GetCloudFrontOriginAccessIdentity
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                  - s3:SetBucketEncryption
+                Resource:
+                  # UI build upload
+                  - !Sub "arn:aws:s3:::${EnvironmentWithDashOrEmpty}${BaseUrl}"
+                  - !Sub "arn:aws:s3:::${EnvironmentWithDashOrEmpty}${BaseUrl}/*"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  # backend CF template read
+                  - !If [isProd, !Sub "arn:aws:s3:::contentnow-cf-templates-${Environment}", !Sub "arn:aws:s3:::contentnow-${Environment}-cf-templates"]
+                  - !If [isProd, !Sub "arn:aws:s3:::contentnow-cf-templates-${Environment}/*", !Sub "arn:aws:s3:::contentnow-${Environment}-cf-templates/*"]
+                  # lambda read
+                  - !Sub "arn:aws:s3:::${ArtifactBucketName}/*"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-${AWS::Region}"
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  AssumeDeployRole:
+    Description: contentnow role to assume for deployment
+    Value: !Ref AssumeDeployRole
+    Export:
+      # cn-iq-jenkins-dev-deploy-role-us-west-2
+      Name: !Sub "${AWS::StackName}-${AWS::Region}-role"

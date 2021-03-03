@@ -1,0 +1,9 @@
+Environment: "ops"
+InstanceType: "t2.xlarge"
+NexusDNSName: "nexus.cmd-ops.warnerbros.com"
+EFSMountPoint: "nexus-home-efs"
+EBSBlockDeviceName: "/dev/xvdcz"
+WbNetworkCidr: 168.161.192.0/21
+WbNetworkWestCoastCidr: 168.161.18.0/21
+WbNetworkEastCoastCidr: 168.161.22.0/21
+WbNetworkLondonCidr: 168.161.200.0/21

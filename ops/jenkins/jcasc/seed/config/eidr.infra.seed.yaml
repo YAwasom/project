@@ -1,0 +1,78 @@
+---
+- isMultiBranch: false
+  projectName: eidr-ecs-cf-dev
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: eidr ecs cloudformation dev
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Eidr
+  viewRegex: ((.*)eidr(.*))
+  scriptPath: eidr/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: eidr-ecs-cf-qa
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: eidr ecs cloudformation qa
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Eidr
+  viewRegex: ((.*)eidr(.*))
+  scriptPath: eidr/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: eidr-ecs-cf-prod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: eidr ecs cloudformation prod
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Eidr
+  viewRegex: ((.*)eidr(.*))
+  scriptPath: eidr/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: eidr-role-cf-dev
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: eidr role cloudformation dev
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Eidr
+  viewRegex: ((.*)eidr(.*))
+  scriptPath: eidr/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: eidr-role-cf-qa
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: eidr role cloudformation qa
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Eidr
+  viewRegex: ((.*)eidr(.*))
+  scriptPath: eidr/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: eidr-role-cf-prod
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: eidr role cloudformation prod
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Eidr
+  viewRegex: ((.*)eidr(.*))
+  scriptPath: eidr/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true

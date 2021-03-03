@@ -1,0 +1,4 @@
+curl -X POST \
+  http://dev.blitline.warnerbros.com/job \
+  -H 'Content-Type: application/json' \
+  -d '{"application_id": "efd", "src": "https://image.tmdb.org/t/p/original/f5F4cRhQdUbyVbB5lTNCwUzD6BP.jpg","v": 1.21,"functions": [{"name": "blur","params": {"radius": 0.0,"sigma": 2.0},"save": {"s3_destination": { "headers" : {"x-amz-acl" : "private"}, "bucket": "com-warnerbros-contentnow-dev-emu-nuxeo","key": "my_image.jpg"},"image_identifier": "EFD_CLIENT"}}]}'

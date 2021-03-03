@@ -1,0 +1,304 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Ops Groups to allow developers to STS from the ops account into their teams AWS account
+
+Resources:
+
+  OpsIAMSelfManagedUserPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Policy to allow IAM users to manage their own Security Credentials
+      ManagedPolicyName: ops-iam-self-credential-manager-policy
+      PolicyDocument:
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "MinimalIAMAllResources",
+              "Effect": "Allow",
+              "Action": [
+                "iam:GetUser*",
+                "iam:GetRole",
+                "iam:GetGroup*",
+                "iam:GetPolicy",
+                "iam:ListGroups",
+                "iam:ListGroupPolicies",
+                "iam:ListGroupsForUser",
+                "iam:ListPolicies",
+                "iam:ListRoles",
+                "iam:ListUsers",
+                "iam:ListUserTags",
+                "iam:GetPolicy",
+                "iam:GetPolicyVersion"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Sid": "AllowManageOwnAccessKeys",
+              "Effect": "Allow",
+              "Action": [
+                  "iam:CreateAccessKey",
+                  "iam:DeleteAccessKey",
+                  "iam:ListAccessKeys",
+                  "iam:UpdateAccessKey"
+              ],
+              "Resource": "arn:aws:iam::*:user/${aws:username}"
+          }
+          ]
+        }
+
+  AskDeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-ask-developer
+      ManagedPolicyArns:
+        - !Ref OpsIAMSelfManagedUserPolicy
+      Policies:
+        - PolicyName: allow-sts-ask-nonprod-default-developer
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::867862831407:role/default_developer"
+        - PolicyName: allow-sts-ask-prod-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::037058588790:role/default_read_only_user"
+
+  ContentNowDeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-contentnow-developer
+      ManagedPolicyArns:
+        - !Ref OpsIAMSelfManagedUserPolicy
+      Policies:
+        - PolicyName: allow-sts-contentnow-nonprod-default-developer
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::147180035125:role/default_developer"
+        - PolicyName: allow-sts-contentnow-prod-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::507416135429:role/default_read_only_user"
+
+  ContentNowMicroServicesDeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-contentnow-micro-developer
+      ManagedPolicyArns:
+        - !Ref OpsIAMSelfManagedUserPolicy
+      Policies:
+        - PolicyName: allow-sts-contentnow-micro-nonprod-default-developer
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::161790439860:role/default_developer"
+        - PolicyName: allow-sts-contentnow-micro-prod-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::522601909192:role/default_read_only_user"
+
+  EfdDeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-efd-developer
+      ManagedPolicyArns:
+        - !Ref OpsIAMSelfManagedUserPolicy
+      Policies:
+        - PolicyName: allow-sts-efd-nonprod-default-developer
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::656419642964:role/default_developer"
+        - PolicyName: allow-sts-efd-stage-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::249411880833:role/default_read_only_user"
+        - PolicyName: allow-sts-efd-prod-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::077047573990:role/default_read_only_user"
+  
+  GamedMediaDeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-gamedmedia-developer
+      ManagedPolicyArns:
+        - !Ref OpsIAMSelfManagedUserPolicy
+      Policies:
+        - PolicyName: allow-sts-gamedmedia-prod-default-developer
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::188664039510:role/default_read_only_user"
+
+  GlobarchDeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-globarch-developer
+      ManagedPolicyArns:
+        - !Ref OpsIAMSelfManagedUserPolicy
+      Policies:
+        - PolicyName: allow-sts-globarch-nonprod-default-developer
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::559928269788:role/default_developer"
+        - PolicyName: allow-sts-globarch-prod-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::866300372279:role/default_read_only_user"
+  
+  HolmesDeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-holmes-developer
+      ManagedPolicyArns:
+        - !Ref OpsIAMSelfManagedUserPolicy
+      Policies:
+        - PolicyName: allow-sts-holmes-nonprod-default-developer
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::394203625936:role/default_developer"
+        - PolicyName: allow-sts-holmes-stage-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::456261441755:role/default_read_only_user"
+        - PolicyName: allow-sts-holmes-prod-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::471371157684:role/default_read_only_user"
+
+  MarklogicDeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-marklogic-developer
+      ManagedPolicyArns:
+        - !Ref OpsIAMSelfManagedUserPolicy
+      Policies:
+        - PolicyName: allow-sts-marklogic-nonprod-default-developer
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::586566971867:role/default_developer"
+        - PolicyName: allow-sts-marklogic-prod-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::606982715702:role/default_read_only_user" 
+
+  MsbDeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-msb-developer
+      ManagedPolicyArns:
+        - !Ref OpsIAMSelfManagedUserPolicy
+      Policies:
+        - PolicyName: allow-sts-msb-nonprod-default-developer
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::880247372461:role/default_developer"
+        - PolicyName: allow-sts-msb-prod-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::635365561645:role/default_read_only_user" 
+  
+  WorkflowDeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-workflow-developer
+      ManagedPolicyArns:
+        - !Ref OpsIAMSelfManagedUserPolicy
+      Policies:
+        - PolicyName: allow-sts-workflow-nonprod-default-developer
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::180568757402:role/default_developer"
+        - PolicyName: allow-sts-workflow-prod-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::183379772110:role/default_read_only_user" 
+
+  VisDeveloperGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Sub ${AWS::StackName}-vis-developer
+      ManagedPolicyArns:
+        - !Ref OpsIAMSelfManagedUserPolicy
+      Policies:
+        - PolicyName: allow-sts-vis-nonprod-default-developer
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::555265525763:role/default_developer"
+        - PolicyName: allow-sts-vis-stage-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::338655496393:role/default_read_only_user"
+        - PolicyName: allow-sts-vis-prod-default-read-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              Effect: Allow
+              Action: "sts:AssumeRole"
+              Resource: "arn:aws:iam::600690981795:role/default_read_only_user"

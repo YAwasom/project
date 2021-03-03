@@ -1,0 +1,94 @@
+jenkins:
+  ## Configure Global Security
+
+  disableRememberMe: true
+  crumbIssuer: standard
+  slaveAgentPort: ${JENKINS_SLAVE_PORT}
+  agentProtocols:
+    - JNLP4-connect
+    - Ping
+
+  # Enable Agent -> Master Access Control
+  remotingSecurity:
+    enabled: true
+
+  securityRealm:
+    saml:
+      advancedConfiguration:
+        forceAuthn: false
+        spEntityId: "https://jenkins.cmd-ops.warnerbros.com/securityRealm/finishLogin"
+      binding: "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+      displayNameAttributeName: "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+      emailAttributeName: "Email"
+      groupsAttributeName: "Group"
+      idpMetadataConfiguration:
+        period: 0
+        url: "https://tw.okta.com/app/exkofzbwkfSEWBGaT0x7/sso/saml/metadata"
+      logoutUrl: "https://login.warnermedia.com/logout.aspx?AppID=0oaofzbwkgSFdohqy0x7"
+      maximumAuthenticationLifetime: 86400
+      usernameAttributeName: "NameID"
+      usernameCaseConversion: "none"
+
+  authorizationStrategy:
+    roleBased:
+      roles:
+        global:
+          - assignments:
+              - "PRD|WB|CMD OPS Jenkins 2.0|admin"
+            name: "admin"
+            pattern: ".*"
+            permissions:
+              - "Overall/Administer"
+          - assignments:
+              - "PRD|WB|CMD OPS Jenkins 2.0|developer"
+            name: "developer"
+            pattern: ".*"
+            permissions:
+              - "Job/Cancel"
+              - "Overall/Read"
+              - "Job/Build"
+              - "Job/Discover"
+              - "Job/Read"
+              - "Job/Configure"
+              - "Job/Workspace"
+              - "View/Read"
+              - "Credentials/View"
+          - assignments:
+              - "PRD|WB|CMD OPS Jenkins 2.0|read-only"
+            name: "read-only"
+            pattern: ".*"
+            permissions:
+              - "Overall/Read"
+
+  # Configure System
+
+  systemMessage: |
+    <p>&#128250; &#127926; &#128149; &#9996;&#127998;️ &#127909; <strong>Welcome to the CMD build server!</strong> &#127902; &#128266; &#128131;&#127995; &#127908; &#128674;</p>
+
+    <p>This Jenkins is 100% configured and managed as code. It runs on AWS ECS.</p>
+
+    <p>Please try and test local when possible and then submit a PR. If you are testing integrations and jobs. You can manually make changes,</p>
+
+    <p>but expect your changes to disappear after updates. For more information please see the <a href="https://github.com/wm-msc-malt/infrastructure/blob/7a2924d63d0011b00ec30876170316ccd38652eb/ops/jenkins/README.md">README.md</a></p>
+
+  updateCenter:
+    sites:
+      - id: default
+        url: https://updates.jenkins.io/update-center.json
+
+  mode: NORMAL
+  numExecutors: 2
+  quietPeriod: 5
+  scmCheckoutRetryCount: 0
+
+  markupFormatter:
+    rawHtml:
+      disableSyntaxHighlighting: false
+
+  primaryView:
+    all:
+      name: all
+
+  views:
+    - all:
+        name: all

@@ -1,0 +1,27 @@
+version: "3.7"
+
+services:
+  jenkins:
+    build:
+      context: ./jenkins_build_context
+      args:
+        - RUNNING_ON_LOCALHOST=false
+    image: cmd/jenkins
+    ports:
+      - 8080:8080
+      - 50000:50000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - jenkins_home:/var/jenkins_home
+    environment:
+      - JENKINS_HOST
+      - JENKINS_HOST_URL
+      - JENKINS_TUNNEL_URL
+      - JENKINS_SLAVE_PORT
+      - AWS_ACCOUNT_ID
+      - AWS_REGION
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_JENKINS_ENVIRONMENT
+volumes:
+  jenkins_home:

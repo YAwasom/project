@@ -1,0 +1,20 @@
+--- 
+- isMultiBranch: true
+  projectName: retailer-metadata
+  url: git@github.com:wm-msc-malt/live-search-metadata.git
+  description: retailer metadata
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Retailer Metadata
+  viewRegex: ((.*)(retailer-metadata)(.*))
+  scmScanInterval: 5m
+  includes: development
+
+- isMultiBranch: true
+  projectName: retailer-metadata-meta-dto
+  url: git@github.com:wm-msc-malt/live-search-meta-dto.git
+  description: retailer meta dto
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Retailer Metadata
+  viewRegex: ((.*)(retailer-metadata)(.*))
+  scmScanInterval: 5m
+  includes: development

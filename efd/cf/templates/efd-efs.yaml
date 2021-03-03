@@ -1,0 +1,46 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+Resources:
+ 
+  FileSystemResource:
+    Type: 'AWS::EFS::FileSystem'
+    Properties:
+      BackupPolicy:
+        Status: ENABLED
+      Encrypted: true
+      KmsKeyId: 779b8760-e70d-40a2-923e-bfc3eec83a8b
+      FileSystemTags:
+        - Key: Name
+          Value: efd-prod-efs
+
+  MountTargetResource1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+      SubnetId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-1-2A"
+      SecurityGroups: 
+      - Fn::ImportValue: !Sub "efd-${Environment}-sg1-app"
+
+  MountTargetResource2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+      SubnetId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-2-2B"
+      SecurityGroups: 
+      - Fn::ImportValue: !Sub "efd-${Environment}-sg1-app"
+
+  MountTargetResource3:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref FileSystemResource
+      SubnetId:
+        Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-3-2C"
+      SecurityGroups: 
+      - Fn::ImportValue: !Sub "efd-${Environment}-sg1-app"

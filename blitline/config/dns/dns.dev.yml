@@ -1,0 +1,9 @@
+---
+HostedZoneId: Z3551TJEWERLPL
+DomainName: contentnow.warnerbros.com
+Name : blitline-dev  
+RecordType : CNAME
+Alias: False
+TTLSeconds: 300
+ResourceRecord : 
+RoutingPolicy: simple

@@ -1,0 +1,102 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: efd vpc
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+
+  DelaySeconds:
+    Type: Number
+    Default: "0"
+
+  MaximumMessageSize:
+    Type: Number
+    Default: "262144"
+
+  MessageRetentionPeriod:
+    Type: Number
+    Default: "345600"
+
+  ReceiveMessageWaitTimeSeconds:
+    Type: Number
+    Default: "10"
+
+  UseDeadLetterQueue:
+    Type: String
+    AllowedValues:
+      - "true"
+      - "false"
+    Default: "true"
+
+  VisibilityTimeout:
+    Type: Number
+    Default: "300"
+
+  KmsKeyReusePeriodSeconds:
+    Type: Number
+    Default: "300"
+
+  QueueNameSuffix:
+    Type: String
+    Default: "audit"
+
+Conditions:
+  CreateDeadLetterQueue: !Equals
+    - !Ref UseDeadLetterQueue
+    - "true"
+
+Resources:
+  SQSQueue:
+    Type: "AWS::SQS::Queue"
+    Properties:
+      # efd-dev-sqs-audit
+      QueueName: !Sub "${AWS::StackName}-${QueueNameSuffix}"
+      KmsDataKeyReusePeriodSeconds: !Ref KmsKeyReusePeriodSeconds
+      KmsMasterKeyId:
+        Fn::ImportValue: !Sub "efd-${Environment}-kms-sqs-alias"
+      DelaySeconds: !Ref DelaySeconds
+      MaximumMessageSize: !Ref MaximumMessageSize
+      MessageRetentionPeriod: !Ref MessageRetentionPeriod
+      ReceiveMessageWaitTimeSeconds: !Ref ReceiveMessageWaitTimeSeconds
+      RedrivePolicy: !If
+        - CreateDeadLetterQueue
+        - deadLetterTargetArn: !GetAtt
+            - DeadLetterQueue
+            - Arn
+          maxReceiveCount: 500
+        - !Ref "AWS::NoValue"
+      VisibilityTimeout: !Ref VisibilityTimeout
+
+  DeadLetterQueue:
+    Condition: CreateDeadLetterQueue
+    Type: "AWS::SQS::Queue"
+    Properties:
+      QueueName: !Sub "${AWS::StackName}-${QueueNameSuffix}-dead-letter"
+      KmsDataKeyReusePeriodSeconds: !Ref KmsKeyReusePeriodSeconds
+      KmsMasterKeyId:
+        Fn::ImportValue: !Sub "efd-${Environment}-kms-sqs-alias"
+
+Outputs:
+  SQSQueueName:
+    Description: efd sqs name
+    Value: !GetAtt SQSQueue.QueueName
+    Export:
+      # efd-dev-sqs-name
+      Name: !Sub "${AWS::StackName}-name"
+
+  SQSQueueUrl:
+    Description: efd sqs url
+    Value: !Ref SQSQueue
+    Export:
+      # efd-dev-sqs-url
+      Name: !Sub "${AWS::StackName}-url"
+
+  SQSQueueArn:
+    Description: efd sqs arn
+    Value: !GetAtt SQSQueue.Arn
+    Export:
+      # efd-dev-sqs-arn
+      Name: !Sub "${AWS::StackName}-arn"

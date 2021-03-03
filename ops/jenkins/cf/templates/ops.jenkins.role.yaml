@@ -1,0 +1,245 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "ops jenkins roles"
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+    MinLength: 3
+    MaxLength: 3
+    AllowedValues:
+      - ops
+    Default: ops
+
+Resources:
+  EcsServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: ecs-service
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
+                  - elasticloadbalancing:DeregisterTargets
+                  - elasticloadbalancing:Describe*
+                  - elasticloadbalancing:RegisterInstancesWithLoadBalancer
+                  - elasticloadbalancing:RegisterTargets
+                  - ec2:Describe*
+                  - ec2:AuthorizeSecurityGroupIngress
+                Resource: "*"
+
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref EC2Role
+
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-${AWS::Region}"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      Path: /
+      Policies:
+        - PolicyName: ecs-service
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecs:*
+                  - elasticloadbalancing:Describe*
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - autoscaling:DescribeAutoScalingInstances
+                  - autoscaling:SetInstanceProtection
+                  - autoscaling:TerminateInstanceInAutoScalingGroup
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:GetAuthorizationToken
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::wb-cmd-${Environment}-s3-jenkins-configuration"
+                  - !Sub "arn:aws:s3:::wb-cmd-${Environment}-s3-jenkins-configuration/*"
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                  - ssm:GetParametersByPath
+                  - kms:Decrypt
+                Resource:
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/com/warnerbros/cmd/${Environment}/jenkins/*"
+                  - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/ad6197c4-d290-482c-9403-b698979cb205"
+        - PolicyName: jenkins-deploy-roles
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::037058588790:role/ask-jenkins-prod-deploy-role-us-west-2
+                  - arn:aws:iam::037058588790:role/ask-jenkins-prod-deploy-role-us-east-2
+                  - arn:aws:iam::867862831407:role/ask-jenkins-dev-deploy-role-us-west-2
+                  - arn:aws:iam::037058588790:role/ask-jenkins-stg-deploy-role-us-west-2
+                  - arn:aws:iam::867862831407:role/ask-jenkins-dev-deploy-role-us-east-2
+                  - arn:aws:iam::037058588790:role/ask-jenkins-stg-deploy-role-us-east-2
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::555265525763:role/wbts-vis-jenkins-dev-deploy-role-us-west-2
+                  - arn:aws:iam::338655496393:role/wbts-vis-jenkins-stg-deploy-role-us-west-2
+                  - arn:aws:iam::600690981795:role/wbts-vis-jenkins-prod-deploy-role-us-west-2
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::147180035125:role/ott-pac-dev-ecs-deploy-us-west-2-role
+                  - arn:aws:iam::507416135429:role/ott-pac-stg-ecs-deploy-us-west-2-role
+                  - arn:aws:iam::507416135429:role/ott-pac-prod-ecs-deploy-us-west-2-role
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::147180035125:role/cn-eidr-dev-ecs-deploy-us-west-2-role
+                  - arn:aws:iam::147180035125:role/cn-eidr-qa-ecs-deploy-us-west-2-role
+                  - arn:aws:iam::507416135429:role/cn-eidr-prod-ecs-deploy-us-west-2-role
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::656419642964:role/publish-api-dev-jenkins-us-west-2-role
+                  - arn:aws:iam::249411880833:role/publish-api-stg-jenkins-us-west-2-role
+                  - arn:aws:iam::077047573990:role/publish-api-prod-jenkins-us-west-2-role
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::147180035125:role/cn-iq-jenkins-dev-deploy-role-us-west-2
+                  - arn:aws:iam::147180035125:role/cn-iq-jenkins-qa-deploy-role-us-west-2
+                  - arn:aws:iam::507416135429:role/cn-iq-jenkins-stg-deploy-role-us-west-2
+                  - arn:aws:iam::507416135429:role/cn-iq-jenkins-prod-deploy-role-us-west-2
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::147180035125:role/cn-localization-jenkins-dev-deploy-role-us-west-2
+                  - arn:aws:iam::147180035125:role/cn-localization-jenkins-qa-deploy-role-us-west-2
+                  - arn:aws:iam::507416135429:role/cn-localization-jenkins-stg-deploy-role-us-west-2
+                  - arn:aws:iam::507416135429:role/cn-localization-jenkins-prod-deploy-role-us-west-2
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::147180035125:role/retailer-metadata-dev-ecs-deploy-us-west-2-role
+                  - arn:aws:iam::507416135429:role/retailer-metadata-prod-ecs-deploy-us-west-2-role
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::*:role/cloud-custodian-ops-role-us-west-2-role
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::147180035125:role/nuxeo-dev-emu-app-role-us-west-2-deploy
+                  - arn:aws:iam::147180035125:role/nuxeo-qa-app-role-us-west-2-deploy
+                  - arn:aws:iam::507416135429:role/nuxeo-stg-app-role-us-west-2-deploy
+                  - arn:aws:iam::507416135429:role/nuxeo-prod-app-role-us-west-2-deploy
+                  - arn:aws:iam::507416135429:role/nuxeo-prod2-app-role-us-west-2-deploy
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::147180035125:role/nuxeo-dev-emu-app-role-us-west-2-search
+                  - arn:aws:iam::147180035125:role/nuxeo-qa-app-role-us-west-2-search
+                  - arn:aws:iam::507416135429:role/nuxeo-stg-app-role-us-west-2-search
+                  - arn:aws:iam::507416135429:role/nuxeo-prod-app-role-us-west-2-search
+                  - arn:aws:iam::507416135429:role/nuxeo-prod2-app-role-us-west-2-search
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::880247372461:role/atom-dev-ecs-deploy-us-west-2-role
+                  - arn:aws:iam::880247372461:role/atom-qa-ecs-deploy-us-west-2-role
+                  - arn:aws:iam::880247372461:role/atom-stage-ecs-deploy-us-west-2-role
+                  - arn:aws:iam::635365561645:role/atom-prod-ecs-deploy-us-west-2-role
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::147180035125:role/logstash-etl-dev-deploy-us-west-2-role
+                  - arn:aws:iam::147180035125:role/logstash-etl-qa-deploy-us-west-2-role
+                  - arn:aws:iam::507416135429:role/logstash-etl-prod-deploy-us-west-2-role
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::147180035125:role/cn-livesearch-dev-deploy-us-west-2-role
+                  - arn:aws:iam::147180035125:role/cn-livesearch-qa-deploy-us-west-2-role
+                  - arn:aws:iam::507416135429:role/cn-livesearch-prod-deploy-us-west-2-role
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::147180035125:role/wb-cn-livesearch-deploy-dev-jenkins-us-west-2
+                  - arn:aws:iam::147180035125:role/wb-cn-livesearch-deploy-qa-jenkins-us-west-2
+                  - arn:aws:iam::507416135429:role/wb-cn-livesearch-deploy-stg-jenkins-us-west-2
+                  - arn:aws:iam::507416135429:role/wb-cn-livesearch-deploy-prod-jenkins-us-west-2
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::656419642964:role/efd-dev-jenkins-deploy-us-west-2-role
+                  - arn:aws:iam::249411880833:role/efd-stg-jenkins-deploy-us-west-2-role
+                  - arn:aws:iam::077047573990:role/efd-prod-jenkins-deploy-us-west-2-role
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::586566971867:role/marklogic-dev-ecs-deploy-us-west-2-role
+                  - arn:aws:iam::586566971867:role/marklogic-qa-ecs-deploy-us-west-2-role
+                  - arn:aws:iam::586566971867:role/marklogic-stage-ecs-deploy-us-west-2-role
+                  - arn:aws:iam::606982715702:role/marklogic-prod-ecs-deploy-us-west-2-role
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::188664039510:role/ssimwave-dev-ec2-deploy-us-west-2-role
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource:
+                  - arn:aws:iam::394203625936:role/holmes-deploy-dev-us-west-2-role
+                  - arn:aws:iam::456261441755:role/holmes-deploy-stg-us-west-2-role
+                  - arn:aws:iam::471371157684:role/holmes-deploy-prod-us-west-2-role
+
+Outputs:
+  EcsServiceRole:
+    Description: ops jenkins ec2 service role
+    Value: !Ref EcsServiceRole
+    Export:
+      # wb-cmd-ops-role-jenkins-us-west-2-service
+      Name: !Sub "${AWS::StackName}-${AWS::Region}-service"
+
+  Ec2InstanceProfileArn:
+    Description: ops jenkins ec2 instance profile
+    Value: !GetAtt Ec2InstanceProfile.Arn
+    Export:
+      # wb-cmd-ops-role-jenkins-us-west-2-instance-profile
+      Name: !Sub "${AWS::StackName}-${AWS::Region}-instance-profile"

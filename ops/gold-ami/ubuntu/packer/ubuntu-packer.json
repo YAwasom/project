@@ -1,0 +1,91 @@
+{
+  "variables": {
+    "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+    "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
+    "region": "{{env `AWS_REGION`}}",
+    "amibase": "",
+    "namebase": ""
+  },
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "access_key": "{{user `aws_access_key`}}",
+      "secret_key": "{{user `aws_secret_key`}}",
+      "region": "{{user `region`}}",
+      "source_ami": "{{user `amibase`}}",
+      "instance_type": "m5.xlarge",
+      "ssh_username": "ubuntu",
+      "ami_name": "{{user `namebase`}}-{{timestamp}}",
+      "ami_users": "147180035125,507416135429,348180535083,037058588790,867862831407,077047573990,232341177191,656419642964,249411880833,586566971867,880247372461,471371157684,606982715702,635365561645,555265525763,338655496393,600690981795,180568757402,183379772110,698916439058,174019917925,255754177081,866300372279,394203625936,456261441755,471371157684",
+      "ami_regions": [
+        "us-west-2",
+        "us-east-2"
+      ],
+      "iam_instance_profile": "wb-cmd-ops-gold-packer",
+      "encrypt_boot": true,
+      "kms_key_id": "alias/wb-cmd-ops-kms-gold-packer",
+      "region_kms_key_ids": {
+        "us-west-2": "alias/wb-cmd-ops-kms-gold-packer",
+        "us-east-2": "alias/wb-cmd-ops-kms-gold-packer"
+      },
+      "temporary_security_group_source_cidrs": [
+        "10.255.0.0/20",
+        "10.255.16.0/20",
+        "10.255.32.0/20",
+        "168.161.192.0/21",
+        "168.161.18.1/32",
+        "168.161.22.1/32",
+        "168.161.200.15/32"
+      ],
+      "vpc_filter": {
+        "filters": {
+          "tag:aws:cloudformation:stack-name": "wb-cmd-ops-vpc"
+        }
+      },
+      "subnet_filter": {
+        "filters": {
+          "tag:aws:cloudformation:stack-name": "wb-cmd-ops-vpc",
+          "tag:aws:cloudformation:logical-id": "PrivateSubnet*"
+        },
+        "most_free": true,
+        "random": false
+      },
+      "run_tags": {
+        "Name": "{{user `namebase`}}",
+        "Ami": "{{user `namebase`}}-{{timestamp}}"
+      },
+      "tags": {
+        "Ami": "{{user `namebase`}}-{{timestamp}}"
+      }
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "manifest",
+      "output": "{{user `namebase`}}-packer-manifest.json",
+      "strip_path": true
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "sudo apt-get -y update && sudo apt-get -y upgrade",
+        "sudo apt-get -y install wget unzip kmod libkmod2"
+      ]
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "wget https://inspector-agent.amazonaws.com/linux/latest/install",
+        "sudo bash install"
+      ]
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo snap install amazon-ssm-agent --classic"
+      ]
+    }
+  ]
+}

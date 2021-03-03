@@ -1,0 +1,286 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "Blitline Web Ecs Cluster"
+
+Parameters:
+  ProjectName:
+    Description: Project Name
+    Type: String
+
+  Environment:
+    Description: Environment Name
+    Type: String
+
+  VpcStack:
+    Type: String
+
+  ECSContainerDesiredCount:
+    Description: Number of ecs containers
+    Type: String
+    Default: 2
+
+  DockerTag:
+    Description: Web docker tag
+    Type: String
+    Default: latest
+
+  CacheTag:
+    Description: Cache docker tag
+    Type: String
+    Default: latest
+
+  LongPollCacheUrl:
+    Description: Long Poll Cache URL required for new polling service with immediate return
+    Type: String
+
+  EcrAccount:
+    Description: Blitline Account
+    Type: String
+
+  RepoName:
+    Description: Ecr Repo Name
+    Type: String
+
+  EcrRegion:
+    Description: ECR Region
+    Type: String
+    Default: us-east-1
+
+  Ec2Stack:
+    Description: Stack Name that deploys the Ec2 servers on which the Ecs Services sit
+    Type: String
+
+  IamStack:
+    Description: Stack Name that deploys the IAM roles
+    Type: String
+    Default: blitline-dev-user
+
+  PeripheralsStack:
+    Description: Stack Name for Peripheral Services
+    Type: String
+
+  DebugMode:
+    Description: Server in Debug Mode?
+    Type: String
+    Default: "true"
+
+  Memory:
+    Description: Memory for ECS Tasks
+    Type: String
+    Default: 128
+
+  Folder:
+    Description: headless
+    Type: String
+    Default: headless
+
+  ACurvePublicKey:
+    Description: A_Curve Public Key
+    Type: String
+
+  TcpClientPort:
+    Description: Tcp Client Port
+    Type: String
+
+  MemoryReservation:
+    Type: String
+    Default : 256
+
+  ACurveServerPublicKey:
+    Type: String
+
+  AllqClientImage:
+    Type: String
+
+  MicroservicesEndpoint:
+    Type: String
+
+  ListeningWebPort:
+    Type: String
+    Default: 3000
+
+  AlbStack:
+    Type: String
+
+  LongpollingCachePort:
+    Type: String
+
+  FileSystemDns:
+    Description: DNS Name of EFS File System
+    Type: String
+
+Conditions:
+  IsDevEnv: !Or [!Equals [!Ref Environment, "dev"], !Equals [!Ref Environment, "qa"]]
+
+Resources:
+
+  EcsCloudwatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/ecs/${ProjectName}-${Environment}-logs"
+      RetentionInDays: 14
+
+  BlitlineWebTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      TaskRoleArn:
+        Fn::ImportValue: !Sub "${IamStack}-TaskRoleArn"
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub "${IamStack}-ExecutionRoleArn"
+      Family: !Sub "${ProjectName}-${Environment}"
+      RequiresCompatibilities:
+        - EC2
+      Volumes:
+        - Name: "persisted-volume"
+          DockerVolumeConfiguration:
+            Autoprovision: True
+            Driver: local
+            Scope: shared
+            DriverOpts:
+              type: nfs
+              device: !Sub "${FileSystemDns}:/"
+              o: !Sub "addr=${FileSystemDns},nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport"
+      ContainerDefinitions:
+      - Name: !Sub '${ProjectName}-${Environment}-web'
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group: !Ref EcsCloudwatchLogGroup
+            awslogs-region: !Ref "AWS::Region"
+            awslogs-stream-prefix: !Sub '${ProjectName}-${Environment}-webclient'
+        PortMappings:
+          - HostPort: 0
+            Protocol: tcp
+            ContainerPort: !Ref ListeningWebPort
+        Environment:
+          - Name: ALLQ_CLIENT_URL
+            Value: allq_client:8090
+          - Name: AWS_ACCESS_KEY
+            Value:
+              'Fn::ImportValue' : !Sub "${IamStack}-BlitlineUserAccessKey"
+          - Name: DEBUG
+            Value: !Ref DebugMode
+          - Name: FOLDER
+            Value: !Ref Folder
+          - Name: AWS_ACCESS_SECRET
+            Value:
+              'Fn::ImportValue' : !Sub "${IamStack}-BlitlineUserSecretAccessKey"
+          - Name: BUCKET
+            Value:
+              'Fn::ImportValue' : !Sub "${PeripheralsStack}-BlitlineTempBucket"
+          - Name: LONGPOLL_CACHE_URL
+            Value: !Sub 'http://${ProjectName}-${Environment}-longpoll-cache:8080/write' #!Ref LongPollCacheUrl
+        Secrets:
+          - Name: CACHE_USERNAME
+            ValueFrom: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/com/warnerbros/contentnow/blitline/${Environment}/CACHE_USERNAME"
+          - Name: CACHE_PASSWORD
+            ValueFrom: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/com/warnerbros/contentnow/blitline/${Environment}/CACHE_PASSWORD"
+
+        Memory: 128
+        Image: !Sub "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/${ProjectName}-web:${DockerTag}"
+        Essential: true
+        Links:
+        - allq_client:allq_client
+        - !Sub "${ProjectName}-${Environment}-longpoll-cache:${ProjectName}-${Environment}-longpoll-cache"
+
+
+      - Name: allq_client
+        Image: !Sub "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/${AllqClientImage}:latest"
+        MemoryReservation: 256
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group: !Ref EcsCloudwatchLogGroup
+            awslogs-region: !Ref "AWS::Region"
+            awslogs-stream-prefix: !Sub '${ProjectName}-${Environment}-allq-client'
+        Environment:
+          - Name: SERVER_STRING
+            Value: !Sub "${MicroservicesEndpoint}:7788"
+          - Name: A_CURVE_PUBLICKEY
+            Value: !Ref ACurvePublicKey
+          - Name: A_CURVE_SERVER_PUBLICKEY
+            Value: !Ref ACurveServerPublicKey
+          - Name: TCP_CLIENT_PORT
+            Value: !Ref TcpClientPort
+          - Name: ALLQ_DEBUG
+            Value: true
+        Secrets:
+          - Name: A_CURVE_SECRETKEY
+            ValueFrom: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/com/warnerbros/contentnow/blitline/${Environment}/ACURVE_SECRET_KEY"
+
+      - Name : memcached
+        Image : memcached
+        LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref EcsCloudwatchLogGroup
+              awslogs-region: !Ref "AWS::Region"
+              awslogs-stream-prefix: !Sub '${ProjectName}-${Environment}-memcached'
+        Memory: 64
+
+      - Name: !Sub '${ProjectName}-${Environment}-longpoll-cache'
+        Image: !Sub '${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/${ProjectName}-longpolling-cache:${CacheTag}'
+        Memory: 128
+        WorkingDirectory: "/src"
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group: !Ref EcsCloudwatchLogGroup
+            awslogs-region: !Ref AWS::Region
+            awslogs-stream-prefix: !Sub '${ProjectName}-${Environment}-longpolling-cache'
+        PortMappings:
+          - HostPort: 8080
+            Protocol: tcp
+            ContainerPort: !Ref LongpollingCachePort
+        MountPoints:
+            - ContainerPath: "/tmp/persisted"
+              SourceVolume: "persisted-volume"
+        Command:
+          - "./start.sh"
+        Environment:
+          - Name: CL_TCP_PORT
+            Value: !Ref LongpollingCachePort
+          - Name: LOG_NAME
+            Value: server
+          - Name: PERSISTED_FOLDER
+            Value: tmp/persisted
+        Secrets:
+          - Name: L_PASSWORD
+            ValueFrom: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/com/warnerbros/contentnow/blitline/${Environment}/L_PASSWORD"
+          - Name: L_USERNAME
+            ValueFrom: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/com/warnerbros/contentnow/blitline/${Environment}/L_USERNAME"
+
+
+  BlitlineWebEcsService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub "${AWS::StackName}"
+      Cluster:
+        Fn::ImportValue: !Sub "${Ec2Stack}-EcsCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 100
+        MinimumHealthyPercent: 0
+      EnableECSManagedTags: false
+
+      LoadBalancers:
+        - ContainerName: !Sub '${ProjectName}-${Environment}-web'
+          ContainerPort: !Ref ListeningWebPort
+          TargetGroupArn:
+            Fn::ImportValue: !Sub '${AlbStack}-web-lb-tg'
+        - ContainerName: !Sub '${ProjectName}-${Environment}-longpoll-cache'
+          ContainerPort: !Ref LongpollingCachePort
+          TargetGroupArn:
+            Fn::ImportValue: !Sub '${AlbStack}-longpoll-cache-lb-tg'
+      PlacementStrategies: []
+      SchedulingStrategy: DAEMON
+      ServiceRegistries: []
+      TaskDefinition: !Ref BlitlineWebTaskDefinition
+
+
+Outputs:
+
+  EcsServiceName:
+    Description: blitline web  service name
+    Value: !Ref BlitlineWebEcsService
+    Export:
+      Name: !Sub "${AWS::StackName}-service-name"

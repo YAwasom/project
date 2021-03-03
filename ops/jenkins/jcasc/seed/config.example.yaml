@@ -1,0 +1,32 @@
+---
+# Multi branch job example
+- isMultiBranch: true
+  # SSH git url
+  url: git@github.com:wm-msc-malt/ASK.git
+  # Individual job details
+  projectName: ask
+  description: ask description
+  # Top level Tab name
+  viewName: Ask
+  # Group jobs by project name with regex
+  viewRegex: ((.*)ask(.*))
+  # Uses jenkins credential id to access github
+  credentials: cmdt_jenkins_github_ssh_key
+  # How often to scan the repo
+  scmScanInterval: 5m
+  # Which branches to scan and build
+  includes: development stage master
+
+# Non multi branch job example
+- isMultiBranch: false
+  projectName: wm-ott-packager-infra-dev
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: wm ott packager infra
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: WM Ott Packager
+  viewRegex: ((.*)wm-ott-packager(.*))
+  scriptPath: ott-packager/cf/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true

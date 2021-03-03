@@ -1,0 +1,208 @@
+---
+- isMultiBranch: false
+  projectName: jenkins-master-jnlp
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: jenkins master image
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: dind-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: docker in docker jnlp slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/alpine/dind-jnlp-slave/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: node-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: node jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/alpine/node-jnlp-slave/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: vis-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: vis jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/alpine/vis/jnlp-slave/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: publish-api-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: publish api jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/alpine/publish-api/jnlp-slave/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: nest-jnlp-slave-base
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: nest base jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/amz2/nest/jnlp-slave-base/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: nest-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: nest jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/amz2/nest/jnlp-slave/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: nest-ubuntu-jnlp-slave-base
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: nest ubuntu base jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/ubuntu/nest/jnlp-slave-base/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: nest-ubuntu-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: nest ubuntu jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/ubuntu/nest/jnlp-slave/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: open-jdk-8-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: openjdk 8 jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/ubuntu/openjdk/jdk-8/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: open-jdk-8-corretto-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: openjdk 8 corretto jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/ubuntu/openjdk/jdk-8-corretto/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: open-jdk-11-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: openjdk 11 jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/ubuntu/openjdk/jdk-11/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: open-jdk-11-corretto-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: openjdk 11 corretto jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/ubuntu/openjdk/jdk-11-corretto/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: ask-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: ask jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/amz2/ask/jnlp-slave/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: infra-build-tools-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: infra build tools jnlp docker slave
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/alpine/infra-build-tools/jnlp-slave/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true
+
+- isMultiBranch: false
+  projectName: dind-ubuntu-jnlp-slave
+  url: git@github.com:wm-msc-malt/infrastructure.git
+  branch: develop
+  description: docker in docker jnlp slave on ubuntu
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Build Agents
+  viewRegex: ((.*)jnlp(.*))
+  scriptPath: ops/jenkins/build-agents/ubuntu/dind-jnlp-slave/Jenkinsfile
+  scmTrigger: ""
+  cronTrigger: ""
+  lightweight: true

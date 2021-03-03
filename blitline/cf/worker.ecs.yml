@@ -1,0 +1,306 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "Blitline Worker Ecs Cluster Tasks & Services"
+
+Parameters:
+  Environment:
+    Description: Environment Name
+    Type: String
+
+  ECSContainerDesiredCount:
+    Description: Number of ecs containers
+    Type: String
+
+  DockerTag:
+    Description: Blitline Worker docker tag
+    Type: String
+    Default: latest
+
+  EcrAccount:
+    Description: ECR Account Number
+    Type: String
+
+  IamStack:
+    Description: Iam Stack
+    Type: String
+
+  DestructLimit:
+    Type: String
+
+  BlitlineConfig:
+    Type: String
+
+  AllQDefaultEUUrl:
+    Type: String
+
+  ProjectName:
+    Type: String
+
+  AllQDefaultEuUrl:
+    Type: String
+
+  AllQUrl:
+    Type: String
+
+  MemcachedAddress:
+    Type: String
+
+  CedisPassword:
+    Type: String
+
+  Ec2Stack:
+    Type: String
+
+  AlbStack:
+    Type: String
+
+  MicroservicesEndpoint:
+    Type: String
+
+  CedisPort:
+    Type: String
+
+  AllQPort:
+    Type: String
+
+  SubProject:
+    Type: String
+
+  EcrRegion:
+    Type: String
+
+  ACurveServerPublicKey:
+    Type: String
+
+  TcpClientPort:
+    Type: String
+
+  ACurvePublicKey:
+    Type: String
+
+  BlitlineBucket:
+    Type: String
+
+  BlitlineConfigValues:
+    Type: String
+
+  TranscoderId:
+    Type: String
+
+  TranscoderRegion:
+    Type: String
+    Default: us-west-2
+
+  KinesisRegion:
+    Type: String
+
+  LongPollCacheUrl:
+    Type: String
+
+Conditions:
+  IsDevEnv: !Or [!Equals [!Ref Environment, "dev"], !Equals [!Ref Environment, "qa"]]
+
+Resources:
+
+  EcsCloudwatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/ecs/${ProjectName}-${Environment}-${SubProject}-logs"
+      RetentionInDays: 14
+
+  BlitlineWorkerServicesTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub "${IamStack}-ExecutionRoleArn"
+      TaskRoleArn:
+        Fn::ImportValue: !Sub "${IamStack}-TaskRoleArn"
+      Family: !Sub '${ProjectName}-${Environment}-${SubProject}-services-family'
+      Memory: '28672'
+      NetworkMode: bridge
+      RequiresCompatibilities:
+        - EC2
+      Volumes:
+        - Name: tmp_alt
+          Host:
+            SourcePath: "/tmp/alt"
+
+      ContainerDefinitions:
+        - Name: !Sub '${ProjectName}-${Environment}-worker'
+          Image: !Sub "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/blitline-worker:${DockerTag}"
+          MountPoints:
+            - ContainerPath : "/tmp/alt"
+              SourceVolume  : tmp_alt
+          WorkingDirectory  : "/u/apps/blitline/current/lib/blitline"
+          MemoryReservation : 1024
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group         : !Ref EcsCloudwatchLogGroup
+              awslogs-region        : us-west-2
+              awslogs-stream-prefix : !Sub '${ProjectName}-${Environment}-${SubProject}'
+          Command:
+            - ruby
+            - allq_queue_worker.rb
+          Environment:
+            - Name  : MEMCACHED_PORT_11211_TCP_ADDR
+              Value : !Ref MemcachedAddress
+
+            - Name  : CEDIS_SERVERS
+              Value : !Sub "${MicroservicesEndpoint}:${CedisPort}"
+
+            - Name  : DESTRUCT_LIMIT
+              Value : !Ref DestructLimit
+
+            - Name  : CONVERT_LIMITS
+              Value : ""
+
+            - Name  : ALLQ_URL
+              Value : !Ref AllQUrl
+
+            - Name  : ALLQ_DEFAULT_US_URL
+              Value : !Ref AllQDefaultEuUrl
+
+            - Name  : CEDIS_PASSWORD
+              Value : !Ref CedisPassword
+
+            - Name  : ALLQ_DEFAULT_EU_URL
+              Value : !Ref AllQDefaultEUUrl
+
+            - Name  : BLITLINE_CONFIG
+              Value : !Ref BlitlineConfig
+
+            - Name  : BLTEMP_BUCKET
+              Value : !Ref BlitlineBucket
+
+            - Name  : AWS_ACCESS_KEY
+              Value :
+                'Fn::ImportValue' : !Sub "${IamStack}-BlitlineUserAccessKey"
+
+            - Name: AWS_ACCESS_SECRET
+              Value :
+                'Fn::ImportValue' : !Sub "${IamStack}-BlitlineUserSecretAccessKey"
+
+            - Name: BLITLINE_CONFIG_VALUES
+              Value: !Ref BlitlineConfigValues
+
+            - Name: DEFAULT_BEANSTALK_POOL_NAME
+              Value: "default"
+
+            - Name: LONGPOLL_CACHE_URL
+              Value: !Ref LongPollCacheUrl
+
+            - Name: AWS_INHERIT_CREDENTIALS
+              Value: true
+
+            - Name: PIPELINE_ID
+              Value: !Ref TranscoderId
+
+            - Name: TRANSCODER_REGION
+              Value: !Ref TranscoderRegion
+
+            - Name: BUCKET_DEFAULT_LOCATION
+              Value: !Sub "${AWS::Region}"
+
+            - Name: KINESIS_REGION
+              Value: !Ref KinesisRegion
+
+            - Name: KINESIS_STREAM_NAME
+              Value: !Sub "${ProjectName}-${Environment}-events"
+          Links:
+            - im7_gs:im7_gs
+            - tika:tika
+            - batik:batik
+            - background:background
+            - us_queue:us_queue
+            - memcached:memcached
+
+        - Name: tika
+          Image: !Sub "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/blitline-tikaserver"
+          PortMappings:
+            - HostPort: 80
+              Protocol: tcp
+              ContainerPort: 80
+          Memory: 512
+
+        - Name: batik
+          Image: !Sub "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/blitline-batik"
+          PortMappings:
+            - HostPort: 7664
+              Protocol: tcp
+              ContainerPort: 7664
+          MountPoints:
+            - ContainerPath: "/tmp/alt"
+              SourceVolume: tmp_alt
+          Memory: 128
+
+        - Name: background
+          Image: !Sub  "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/blitline-background"
+          PortMappings:
+            - HostPort: 5001
+              Protocol: tcp
+              ContainerPort: 5001
+          Environment:
+            - Name: PORT
+              Value: '5001'
+          MemoryReservation: 128
+
+        - Name: memcached
+          Image: !Sub  "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/blitline-memcached"
+          PortMappings:
+            - HostPort: 11211
+              Protocol: tcp
+              ContainerPort: 11211
+          Memory: 128
+
+        - Name: im7_gs
+          Image:  !Sub "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/blitline-im7-gs"
+          PortMappings:
+            - HostPort: 7668
+              Protocol: tcp
+              ContainerPort: 7668
+          MountPoints:
+            - ContainerPath: "/tmp/alt"
+              SourceVolume: tmp_alt
+          Memory: 24576
+
+        - Name: us_queue
+          Image:  !Sub "${EcrAccount}.dkr.ecr.${EcrRegion}.amazonaws.com/blitline/blitline-allq-client"
+          PortMappings:
+            - HostPort: 8090
+              Protocol: tcp
+              ContainerPort: 8090
+          Environment:
+            - Name  : SERVER_STRING
+              Value : !Sub "${MicroservicesEndpoint}:${AllQPort}"
+            - Name  : A_CURVE_PUBLICKEY
+              Value : !Ref ACurvePublicKey
+            - Name  : A_CURVE_SERVER_PUBLICKEY
+              Value : !Ref ACurveServerPublicKey
+            - Name  : TCP_CLIENT_PORT
+              Value : !Ref TcpClientPort
+          Secrets:
+            - Name: A_CURVE_SECRETKEY
+              ValueFrom: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/com/warnerbros/contentnow/blitline/${Environment}/ACURVE_SECRET_KEY"
+          Memory: 128
+          Essential: true
+
+
+  BlitlineWorkerServicesEcsService:
+    Type: AWS::ECS::Service
+    Properties:
+      #TimeoutInMinutes : 10
+      ServiceName: !Sub "${ProjectName}-${Environment}-${SubProject}-services-svc"
+      TaskDefinition: !Ref BlitlineWorkerServicesTaskDefinition
+      Cluster:
+        Fn::ImportValue: !Sub "${Ec2Stack}-EcsCluster"
+      DeploymentConfiguration:
+        MaximumPercent: 100
+        MinimumHealthyPercent: 0
+      EnableECSManagedTags: false
+      LoadBalancers: []
+      PlacementStrategies: []
+      SchedulingStrategy: DAEMON
+      ServiceRegistries: []
+
+

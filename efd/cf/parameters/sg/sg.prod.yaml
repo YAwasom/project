@@ -1,0 +1,5 @@
+Environment: prod
+VpcCidr: 10.176.237.0/24
+WBVpn1: 10.231.160.0/19
+WBVpn2: 10.143.224.0/21
+WBVpn3: 10.140.204.0/23

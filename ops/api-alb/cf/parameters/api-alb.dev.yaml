@@ -1,0 +1,3 @@
+VPCStack: "apialb-dev-vpc"
+CognitoStack: "	apialb-dev-cg"
+CertificateARN: "arn:aws:acm:us-west-2:348180535083:certificate/dd2c4d42-c077-46b2-be05-c21d2247b82d"

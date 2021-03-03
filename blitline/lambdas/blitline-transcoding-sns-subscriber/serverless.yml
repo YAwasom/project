@@ -1,0 +1,124 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: blitline-transcode-sns
+
+plugins:
+  - serverless-pseudo-parameters
+  - serverless-parameters
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+
+  stage   :  ${opt:stage, 'dev'}
+  region  : ${opt:region, 'us-west-2'}
+  role    : BlitlineSnsSubscriberLambdaRole
+
+  vpc:
+    securityGroupIds:
+      - ${cf:${self:provider.custom.cloudformation.${self:provider.stage}.SecurityGroupStack}.BlitlineLambdaSecurityGroup}
+    subnetIds:
+      - ${cf:${self:provider.custom.cloudformation.${self:provider.stage}.vpcStack}.SubnetAPrivate}
+      - ${cf:${self:provider.custom.cloudformation.${self:provider.stage}.vpcStack}.SubnetBPrivate}
+  deploymentBucket:
+      name: com-wb-cs-contentnow-devops-lambdas
+
+  logRetentionInDays: 5
+
+  custom:
+    cloudformation:
+      dev:
+        vpcStack: contentnow-vpc-dev
+        SecurityGroupStack: blitline-dev-sg
+        PeripheralsStack : blitline-dev-peripherals
+      qa:
+        vpcStack: contentnow-vpc-dev
+        SecurityGroupStack: blitline-qa-sg
+        PeripheralsStack : blitline-qa-peripherals
+      stg:
+        vpcStack: contentnow-vpc
+        SecurityGroupStack: blitline-stg-sg
+        PeripheralsStack : blitline-stg-peripherals
+      prod:
+        vpcStack: contentnow-vpc
+        SecurityGroupStack: blitline-prod-sg
+        PeripheralsStack : blitline-prod-peripherals
+
+package:
+  individually: true
+  exclude:
+    - README.md
+    - .editorconfig
+    - .eslintrc
+    - .gitignore
+    - .vscode/**
+    - node_modules/**
+
+functions:
+  transcoding-sns-subscriber:
+    handler: index.handler
+    environment:
+      BLITLINE_ENDPOINT : '${self:provider.stage}.blitline.warnerbros.com'
+      PATH : /sns_job_completed
+    events:
+      - sns: ${cf:${self:provider.custom.cloudformation.${self:provider.stage}.PeripheralsStack}.TranscodingSnsTopic}
+
+resources:
+  Resources:
+    BlitlineSnsSubscriberLambdaRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            -
+              Effect: "Allow"
+              Principal:
+                Service:
+                  - "lambda.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Path: "/"
+        Policies:
+          -
+            PolicyName: 'blitline-${self:provider.stage}-sns-subscriber-lambda-policy'
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                -
+                  Effect: "Allow"
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource: "arn:aws:logs:#{AWS::Region}:#{AWS::AccountId}:/aws/lambda/*:*"
+                -
+                  Effect: "Allow"
+                  Action:
+                    - sns:Subscribe
+                  Resource: "arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:blitline-${self:provider.stage}-transcoding-notifications"
+        ManagedPolicyArns:
+          - "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+
+    # BlitlineLambdaSecurityGroup:
+    #   Type: AWS::EC2::SecurityGroup
+    #   Properties:
+    #     GroupDescription: !Sub 'blitline-${self:provider.stage}-lambda-sg'
+    #     GroupName       : !Sub 'blitline-${self:provider.stage}-lambda-sg'
+    #     VpcId: ${cf:${self:provider.custom.cloudformation.${self:provider.stage}.vpcStack}.VPC}
+    #     SecurityGroupIngress:
+    #     - IpProtocol: tcp
+    #       FromPort: 443
+    #       ToPort: 443
+    #       CidrIp: 0.0.0.0/0

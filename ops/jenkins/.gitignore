@@ -1,0 +1,14 @@
+*.password
+.gradle
+.DS_Store
+.project
+.gradle
+build/
+.settings/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+tmp.txt
+.idea/*
+plugins.txt.diff
+jenkins-ssm-put-parameters-*.yaml

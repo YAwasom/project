@@ -1,0 +1,6 @@
+Environment: ops
+ConfigurationName: cmd-ops-slack-chat-bot
+# #pit-dev-ops-bot
+SlackChannelId: G013BLPGEKS
+# WB Tech Slack
+SlackWorkspaceId: T0CHK1VUH

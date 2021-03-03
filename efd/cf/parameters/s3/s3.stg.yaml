@@ -1,0 +1,2 @@
+Environment: stg
+LogDestinationBucketName: s3wbtsmarsefdstgs3coudtrails3bucketlog

@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: "cmd aws slack ops chat bot"
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+
+  ConfigurationName:
+    Description: chat bot config name
+    Type: String
+
+  SlackChannelId:
+    Description: slack channel id
+    Type: String
+
+  SlackWorkspaceId:
+    Description: slack channel workspace id
+    Type: String
+
+Resources:
+  OpsChatBotRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Sub "${AWS::StackName}"
+      Description: "aws ops chat bot execution role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "chatbot.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/service-role/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/ReadOnlyAccess"
+        - "arn:aws:iam::aws:policy/AWSSupportAccess"
+        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+      Policies:
+        - PolicyName: !Sub "${AWS::StackName}-notification"
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:Describe*
+                  - cloudwatch:Get*
+                  - cloudwatch:List*
+                Resource: "*"
+        - PolicyName: !Sub "${AWS::StackName}-read-only-deny"
+          PolicyDocument:
+            Statement:
+              - Effect: Deny
+                Action:
+                  - iam:*
+                  - s3:GetBucketPolicy
+                  - ssm:*
+                  - sts:*
+                  - kms:*
+                  - cognito-idp:GetSigningCertificate
+                  - ec2:GetPasswordData
+                  - ecr:GetAuthorizationToken
+                  - gamelift:RequestUploadCredentials
+                  - gamelift:GetInstanceAccess
+                  - lightsail:DownloadDefaultKeyPair
+                  - lightsail:GetInstanceAccessDetails
+                  - lightsail:GetKeyPair
+                  - lightsail:GetKeyPairs
+                  - redshift:GetClusterCredentials
+                  - storagegateway:DescribeChapCredentials"
+                Resource: "*"
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}"
+        - Key: Environment
+          Value: !Ref Environment
+
+  OpsChatBot:
+    Type: AWS::Chatbot::SlackChannelConfiguration
+    Properties:
+      ConfigurationName: !Ref ConfigurationName
+      IamRoleArn: !GetAtt OpsChatBotRole.Arn
+      LoggingLevel: ERROR
+      SlackChannelId: !Ref SlackChannelId
+      SlackWorkspaceId: !Ref SlackWorkspaceId
+      SnsTopicArns: 
+        - !Ref SecReportTopic
+  SecReportTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: !Sub ${AWS::StackName}-SecReport
+      TopicName: !Sub ${AWS::StackName}-SecReport
+
+Outputs:
+  OpsChatBotRole:
+    Description: ops chat bot role arn
+    Value: !GetAtt OpsChatBotRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-arn"

@@ -1,0 +1,20 @@
+---
+- isMultiBranch: true
+  projectName: eidr
+  url: git@github.com:wm-msc-malt/eidr-web-ui.git
+  description: eidr application
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Eidr
+  viewRegex: ((.*)eidr(.*))
+  scmScanInterval: 5m
+  includes: development staging master
+
+- isMultiBranch: true
+  projectName: eidr-core
+  url: git@github.com:wm-msc-malt/eidr-core.git
+  description: eidr core
+  credentials: cmdt_jenkins_github_ssh_key
+  viewName: Eidr
+  viewRegex: ((.*)eidr(.*))
+  scmScanInterval: 5m
+  includes: development

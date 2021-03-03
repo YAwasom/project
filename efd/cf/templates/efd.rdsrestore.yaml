@@ -1,0 +1,115 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: efd rds
+
+Parameters:
+  Environment:
+    Description: An environment name that will be appended to resource names
+    Type: String
+  DbSnapshot:
+    Description: Snapshot ARN
+    Type: String
+  DBAllocated:
+    Description: DB Alloacated Storage
+    Type: String
+  MaxDBAllocated:
+    Description: Max DB Alloacated Storage
+    Type: String        
+
+  RdsInstanceClass:
+    Description: MySQL RDS instance Class
+    Type: String
+    Default: db.m5.large
+
+  MySQLDbName:
+    Description: MySQL RDS instance name
+    Type: String
+    Default: efd-dev-rds
+
+  MySQLMasterUserName:
+    Description: MySQL RDS instance Master User name
+    Type: String
+    Default: marsservice
+
+Resources:
+  Rds:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      AllocatedStorage: !Ref DBAllocated
+      MaxAllocatedStorage: !Ref MaxDBAllocated
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      DBInstanceClass: !Ref RdsInstanceClass
+      Port: "3306"
+      StorageType: gp2
+      BackupRetentionPeriod: 7
+      KmsKeyId:
+        Fn::ImportValue: !Sub "efd-${Environment}-kms-rds-db-alias"
+      StorageEncrypted: true
+      DBSnapshotIdentifier: !Ref DbSnapshot
+      DeletionProtection: true
+      MasterUsername: !Ref MySQLMasterUserName
+      MasterUserPassword: "{{resolve:ssm-secure:efd-rds-cred:1}}"
+      PreferredBackupWindow: "01:00-01:30"
+      PreferredMaintenanceWindow: "wed:12:16-wed:12:46"
+      EnablePerformanceInsights: true
+      PerformanceInsightsRetentionPeriod: 731
+      EnableCloudwatchLogsExports:
+        - "audit"
+        - "error"
+        - "general"
+        - "slowquery"
+      MonitoringRoleArn:
+        Fn::ImportValue: !Sub "efd-${Environment}-rds-role-${AWS::Region}-arn"
+      MonitoringInterval: 60
+      Engine: mysql
+      EngineVersion: 5.7.25
+      LicenseModel: general-public-license
+      MultiAZ: true
+      DBSubnetGroupName: !Ref DbSubnetGroup
+      OptionGroupName: !Ref DbOptionGroup
+      DBParameterGroupName: !Ref DbParameterGroup
+      DeleteAutomatedBackups: true
+      DBInstanceIdentifier: !Sub "${AWS::StackName}-mysql-2"
+      VPCSecurityGroups:
+        - Fn::ImportValue: !Sub "efd-${Environment}-sg1-db"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-mysql"
+
+  DbSubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupDescription: !Sub "${AWS::StackName} db subnet group"
+      SubnetIds:
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-3-2C"
+        - Fn::ImportValue: !Sub "efd-${Environment}-vpc1-app-private-subnet-1-2A"
+
+  DbParameterGroup:
+    Type: "AWS::RDS::DBParameterGroup"
+    Properties:
+      Description: !Sub "${AWS::StackName} db parameter group"
+      Family: mysql5.7
+      Parameters:
+        default_password_lifetime: "0"
+        time_zone: US/Pacific
+
+  DbOptionGroup:
+    Type: "AWS::RDS::OptionGroup"
+    Properties:
+      OptionGroupDescription: !Sub "${AWS::StackName} option group"
+      EngineName: mysql
+      MajorEngineVersion: "5.7"
+      OptionConfigurations:
+        - OptionName: MEMCACHED
+          OptionSettings:
+            - Name: CHUNK_SIZE
+              Value: "32"
+            - Name: BINDING_PROTOCOL
+              Value: ascii
+          Port: 11211
+          VpcSecurityGroupMemberships:
+            - Fn::ImportValue: !Sub "efd-${Environment}-sg1-db"

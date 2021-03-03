@@ -1,0 +1,10 @@
+TempBucket                  : arn:aws:s3:::com-warnerbros-contentnow-stg-rendition-nuxeo
+TransientBucket             : arn:aws:s3:::com-warnerbros-contentnow-stg-transient-nuxeo
+SourceBucket                : arn:aws:s3:::contentnow-assets-mars-perm-prod
+LakesideBucket              : arn:aws:s3:::lakeside-dev-s3-us-west-2-nbcu
+LakesideBucketKey           : arn:aws:kms:us-west-2:147180035125:key/6c245c66-47e9-4228-8a75-9fac79ee2845
+ProjectName                 : blitline
+PeripheralsStack            : blitline-stg-peripherals
+Environment                 : stg
+ShortlifeSuffix             : '-shortlife'
+PrivateSuffix               : '-private'

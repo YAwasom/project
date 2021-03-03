@@ -1,0 +1,16 @@
+/log/mongodb/*.log {
+    daily
+    maxage 3
+    missingok
+    notifempty
+    size 100M
+    create 0640 mongod mongod
+    delaycompress
+    compress
+    rotate 4
+    sharedscripts
+    copytruncate
+    postrotate
+        /bin/kill -SIGUSR1 `cat /var/run/mongo/mongod.pid 2> /dev/null` 2> /dev/null || true
+    endscript
+}

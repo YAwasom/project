@@ -1,0 +1,15 @@
+VpcStack                  : contentnow-vpc
+ProjectName               : blitline
+Environment               : prod
+SecurityGroupStack        : blitline-prod-sg
+ActiveSecurityGroup       : microservices-lb-security-group
+AllQPort                  : "7788"
+WbCidr                    : "168.161.192.0/21"
+BlitlineHostedZone        : Z01946202K8O4A97P9PMM
+MicroservicesLbDnsPrefix  : "ms-prod"
+InternalDns               : "blitline.warnerbros.com."
+AllowedAWSAccount         : "arn:aws:iam::077047573990:root,arn:aws:iam::348180535083:root"
+LongpollingCachePort      : 8080
+WebDnsPrefix              : prod
+HealthCheckIntervalSecs   : 10
+AlbCertArnId              : 3dfe8863-bf5f-457b-8dde-9a9dc660ab86
